@@ -1,0 +1,21 @@
+name:                typelist-normalize
+version:             0.1.0.0
+#synopsis:            
+#description:         
+homepage:            https://github.com/gelisam/typelist-normalize#readme
+github:              gelisam/typelist-normalize
+license:             PublicDomain
+author:              Samuel Gélineau
+maintainer:          gelisam+github@gmail.com
+category:            Type System
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - ghc
+  - ghc-tcplugins-extra
+
+library:
+  source-dirs:      src
+  ghc-options: -W -Wall
