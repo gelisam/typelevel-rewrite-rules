@@ -13,12 +13,16 @@ extra-source-files:
 
 dependencies:
   - base >= 4.7 && < 5
-  - ghc
-  - ghc-tcplugins-extra
+  - ghc-prim
 
 library:
   source-dirs:      src
   ghc-options: -W -Wall
+  dependencies:
+    - ghc
+    - ghc-tcplugins-extra
+    - on-error
+    - transformers
 
 tests:
   check-if-it-compiles:
