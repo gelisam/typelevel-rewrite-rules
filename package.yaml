@@ -19,3 +19,10 @@ dependencies:
 library:
   source-dirs:      src
   ghc-options: -W -Wall
+
+tests:
+  check-if-it-compiles:
+    source-dirs: test
+    main: Test.hs
+    dependencies:
+      - typelist-normalize
