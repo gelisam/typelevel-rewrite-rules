@@ -3,25 +3,47 @@ module TypeList.Normalize (plugin) where
 
 import Control.Monad
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.Except
-import Control.Monad.Trans.OnError
+import Control.Monad.Trans.Writer
 import Data.Foldable
-import GHC.TcPluginM.Extra (lookupModule, lookupName)
+import Data.List.NonEmpty (NonEmpty((:|)))
+import GHC.TcPluginM.Extra (evByFiat, lookupModule, lookupName)
 
 -- GHC API
 import Module (mkModuleName)
 import OccName (mkTcOcc)
-import Plugins (Plugin(tcPlugin), defaultPlugin)
-import TcPluginM (TcPluginM, tcLookupTyCon)
+import Plugins (Plugin(pluginRecompile, tcPlugin), defaultPlugin, purePlugin)
+import TcEvidence (EvTerm)
+import TcPluginM (TcPluginM, newCoercionHole, tcLookupTyCon)
 import TcRnTypes
+import TcType (TcPredType)
 import TyCon (TyCon)
-import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, eqType, mkTyConTy, splitTyConApp_maybe)
+import Type
+  ( EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, eqType, mkPrimEqPred, mkTyConApp
+  , mkTyConTy, splitTyConApp_maybe
+  )
 import qualified FastString
 
 -- printf-debugging:
-import TcPluginM (tcPluginIO)
-import Outputable
---tcPluginIO $ print ("foo", showSDocUnsafe $ ppr foo)
+--import TcPluginM (tcPluginIO)
+--import Outputable
+----tcPluginIO $ print ("foo", showSDocUnsafe $ ppr foo)
+
+
+data ReplaceCt = ReplaceCt
+  { evidenceOfCorrectness  :: EvTerm
+  , replacedConstraint     :: Ct
+  , replacementConstraints :: [Ct]
+  }
+
+combineReplaceCts
+  :: [ReplaceCt]
+  -> TcPluginResult
+combineReplaceCts replaceCts
+  = TcPluginOk (fmap solvedConstraint replaceCts)
+               (foldMap replacementConstraints replaceCts)
+  where
+    solvedConstraint :: ReplaceCt -> (EvTerm, Ct)
+    solvedConstraint = (,) <$> evidenceOfCorrectness <*> replacedConstraint
 
 
 plugin
@@ -34,6 +56,7 @@ plugin = defaultPlugin
     , tcPluginSolve = solve
     , tcPluginStop  = \_ -> pure ()
     }
+  , pluginRecompile = purePlugin
   }
 
 lookupTyCon
@@ -51,19 +74,31 @@ lookupTyCon packageName moduleName tyConName = do
   tyCon <- tcLookupTyCon tcNm
   pure tyCon
 
+
 asEqualityConstraint
   :: Ct
   -> Maybe (Type, Type)
-asEqualityConstraint constraint = do
+asEqualityConstraint ct = do
   let predTree
         = classifyPredType
         $ ctEvPred
         $ ctEvidence
-        $ constraint
+        $ ct
   case predTree of
     EqPred NomEq lhs rhs
       -> pure (lhs, rhs)
     _ -> Nothing
+
+toEqualityConstraint
+  :: Type -> Type -> CtLoc -> TcPluginM Ct
+toEqualityConstraint lhs rhs loc = do
+  let tcPredType :: TcPredType
+      tcPredType = mkPrimEqPred lhs rhs
+
+  hole <- newCoercionHole tcPredType
+
+  pure $ mkNonCanonical
+       $ CtWanted tcPredType (HoleDest hole) WDeriv loc
 
 -- 'Type' does not have an 'Eq' instance
 eqTypeList
@@ -79,10 +114,10 @@ eqTypeList _ _
   = False
 
 asArgumentsTo
-  :: [TyCon]
+  :: NonEmpty TyCon
   -> Type
   -> Maybe [Type]
-asArgumentsTo expectedTyCons tp = do
+asArgumentsTo (toList -> expectedTyCons) tp = do
   (actualTyCon, args) <- splitTyConApp_maybe tp
   let (actualArgs, remainingArgs) = splitAt (length expectedTyCons - 1) args
   let actualTypes   = mkTyConTy actualTyCon : actualArgs
@@ -90,8 +125,14 @@ asArgumentsTo expectedTyCons tp = do
   guard (eqTypeList actualTypes expectedTypes)
   pure remainingArgs
 
+toArgumentsTo
+  :: NonEmpty TyCon
+  -> [Type] -> Type
+toArgumentsTo (tyCon :| tyCons) tps
+  = mkTyConApp tyCon (fmap mkTyConTy tyCons ++ tps)
+
 asBinaryApplication
-  :: [TyCon]
+  :: NonEmpty TyCon
   -> Type
   -> Maybe (Type, Type)
 asBinaryApplication tyCons tp = do
@@ -100,14 +141,30 @@ asBinaryApplication tyCons tp = do
     [arg1, arg2] -> pure (arg1, arg2)
     _ -> Nothing
 
+toBinaryApplication
+  :: NonEmpty TyCon
+  -> Type -> Type -> Type
+toBinaryApplication tyCons lhs rhs
+  = toArgumentsTo tyCons [lhs, rhs]
+
 asLeftAssociativeApplication
-  :: [TyCon]
+  :: NonEmpty TyCon
   -> Type
   -> Maybe (Type, Type, Type)
 asLeftAssociativeApplication tyCons args123 = do
   (args12, arg3) <- asBinaryApplication tyCons args123
   (arg1, arg2) <- asBinaryApplication tyCons args12
   pure (arg1, arg2, arg3)
+
+toRightAssociativeApplication
+  :: NonEmpty TyCon
+  -> Type -> Type -> Type -> Type
+toRightAssociativeApplication tyCons arg1 arg2 arg3
+  = arg1 `op` (arg2 `op` arg3)
+  where
+    op :: Type -> Type -> Type
+    op = toBinaryApplication tyCons
+
 
 solve
   :: (TyCon, TyCon)  -- ^ (type family (++), kind *)
@@ -117,22 +174,33 @@ solve
   -> TcPluginM TcPluginResult
 solve _ _ _ [] = do
   pure $ TcPluginOk [] []
-solve (appendTyCon, starTyCon) _ _ wantedConstraints
-  = onErrorDefault (TcPluginOk [] []) $ do
-      for_ wantedConstraints $ \constraint -> do
-        -- lhs ~ rhs
-        (lhs, rhs) <- onNothingThrowError ()
-                    $ asEqualityConstraint constraint
-        case lhs of
-          (asLeftAssociativeApplication appendTyCons -> Just (arg1, arg2, arg3)) -> do
-            lift $ tcPluginIO $ print ("arg1", showSDocUnsafe $ ppr arg1)
-            lift $ tcPluginIO $ print ("arg2", showSDocUnsafe $ ppr arg2)
-            lift $ tcPluginIO $ print ("arg3", showSDocUnsafe $ ppr arg3)
-            pure ()
-          _ -> do
-            throwE ()
-      pure $ TcPluginOk [] []
+solve (appendTyCon, starTyCon) _ _ cts = do
+  replaceCts <- execWriterT $ do
+    for_ cts $ \ct -> do
+      -- ct => ...
+      for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
+        -- lhs ~ rhs => ...
+        for_ (asLeftAssociativeApplication appendTyCons lhs) $ \(arg1, arg2, arg3) -> do
+          -- ((arg1 ++ arg2) ++ arg3) ~ rhs => ...
+
+          -- (arg1 ++ (arg2 ++ arg3)) ~ rhs
+          let lhs' :: Type
+              lhs' = toRightAssociativeApplication appendTyCons arg1 arg2 arg3
+
+              rhs' :: Type
+              rhs' = rhs
+
+          ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
+
+          let replaceCt :: ReplaceCt
+              replaceCt = ReplaceCt
+                { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs'
+                , replacedConstraint     = ct
+                , replacementConstraints = [ct']
+                }
+          tell [replaceCt]
+  pure $ combineReplaceCts replaceCts
   where
     -- Since '++' is kind-polymorphic, its first argument is '*'
-    appendTyCons :: [TyCon]
-    appendTyCons = [appendTyCon, starTyCon]
+    appendTyCons :: NonEmpty TyCon
+    appendTyCons = appendTyCon :| [starTyCon]

@@ -21,7 +21,6 @@ library:
   dependencies:
     - ghc
     - ghc-tcplugins-extra
-    - on-error
     - transformers
 
 tests:
