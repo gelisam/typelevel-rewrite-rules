@@ -166,6 +166,39 @@ toRightAssociativeApplication tyCons arg1 arg2 arg3
     op = toBinaryApplication tyCons
 
 
+rewrite
+  :: Ct
+  -> (Type -> Maybe Type)
+  -> WriterT [ReplaceCt] TcPluginM ()
+rewrite ct f = do
+  for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
+    -- lhs ~ rhs => ...
+    case f lhs of
+      Just lhs' -> do
+        ct' <- lift $ toEqualityConstraint lhs' rhs (ctLoc ct)
+
+        let replaceCt :: ReplaceCt
+            replaceCt = ReplaceCt
+              { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs
+              , replacedConstraint     = ct
+              , replacementConstraints = [ct']
+              }
+        tell [replaceCt]
+      Nothing -> do
+        case f rhs of
+          Just rhs' -> do
+            ct' <- lift $ toEqualityConstraint lhs rhs' (ctLoc ct)
+
+            let replaceCt :: ReplaceCt
+                replaceCt = ReplaceCt
+                  { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs rhs'
+                  , replacedConstraint     = ct
+                  , replacementConstraints = [ct']
+                  }
+            tell [replaceCt]
+          Nothing -> do
+            pure ()
+
 solve
   :: (TyCon, TyCon)  -- ^ (type family (++), kind *)
   -> [Ct]            -- ^ Given constraints
@@ -178,27 +211,12 @@ solve (appendTyCon, starTyCon) _ _ cts = do
   replaceCts <- execWriterT $ do
     for_ cts $ \ct -> do
       -- ct => ...
-      for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
-        -- lhs ~ rhs => ...
-        for_ (asLeftAssociativeApplication appendTyCons lhs) $ \(arg1, arg2, arg3) -> do
-          -- ((arg1 ++ arg2) ++ arg3) ~ rhs => ...
+      rewrite ct $ \typeExpr -> do
+        -- ... (arg1 ++ arg2) ++ arg3 ...
+        (arg1, arg2, arg3) <- asLeftAssociativeApplication appendTyCons typeExpr
 
-          -- (arg1 ++ (arg2 ++ arg3)) ~ rhs
-          let lhs' :: Type
-              lhs' = toRightAssociativeApplication appendTyCons arg1 arg2 arg3
-
-              rhs' :: Type
-              rhs' = rhs
-
-          ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
-
-          let replaceCt :: ReplaceCt
-              replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs'
-                , replacedConstraint     = ct
-                , replacementConstraints = [ct']
-                }
-          tell [replaceCt]
+        -- ... arg1 ++ (arg2 ++ arg3) ...
+        Just $ toRightAssociativeApplication appendTyCons arg1 arg2 arg3
   pure $ combineReplaceCts replaceCts
   where
     -- Since '++' is kind-polymorphic, its first argument is '*'
