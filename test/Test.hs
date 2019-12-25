@@ -3,18 +3,31 @@
 import TypeList.Append
 
 
-ex1 :: (((as ++ '[]) ++ (bs ++ '[])) ~ (as ++ bs) => r)
-    -> proxy as
-    -> proxy bs
-    -> r
-ex1 r _ _ = r
+ex1a :: (((as ++ '[]) ++ (bs ++ '[])) ~ (as ++ bs) => r)
+     -> proxy as
+     -> proxy bs
+     -> r
+ex1a r _ _ = r
 
-ex2 :: (((as ++ bs) ++ cs) ~ (as ++ (bs ++ cs)) => r)
-    -> proxy as
-    -> proxy bs
-    -> proxy cs
-    -> r
-ex2 r _ _ _ = r
+ex1b :: ((as ++ bs) ~ ((as ++ '[]) ++ (bs ++ '[])) => r)
+     -> proxy as
+     -> proxy bs
+     -> r
+ex1b r _ _ = r
+
+ex2a :: (((as ++ bs) ++ cs) ~ (as ++ (bs ++ cs)) => r)
+     -> proxy as
+     -> proxy bs
+     -> proxy cs
+     -> r
+ex2a r _ _ _ = r
+
+ex2b :: ((as ++ (bs ++ cs)) ~ ((as ++ bs) ++ cs) => r)
+     -> proxy as
+     -> proxy bs
+     -> proxy cs
+     -> r
+ex2b r _ _ _ = r
 
 
 main :: IO ()
