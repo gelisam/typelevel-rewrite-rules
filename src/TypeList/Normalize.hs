@@ -17,11 +17,11 @@ import TcPluginM (TcPluginM, newCoercionHole, tcLookupTyCon)
 import TcRnTypes
 import TcType (TcPredType)
 import TyCon (TyCon)
-import Type
-  ( EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, eqType, mkPrimEqPred, mkTyConApp
-  , mkTyConTy, splitTyConApp_maybe
-  )
+import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
 import qualified FastString
+
+import TypeList.Tree
+import TypeList.TypeExpr
 
 -- printf-debugging:
 --import TcPluginM (tcPluginIO)
@@ -100,104 +100,6 @@ toEqualityConstraint lhs rhs loc = do
   pure $ mkNonCanonical
        $ CtWanted tcPredType (HoleDest hole) WDeriv loc
 
--- 'Type' does not have an 'Eq' instance
-eqTypeList
-  :: [Type]
-  -> [Type]
-  -> Bool
-eqTypeList [] []
-  = True
-eqTypeList (t1 : ts1) (t2 : ts2)
-  | eqType t1 t2
-  = eqTypeList ts1 ts2
-eqTypeList _ _
-  = False
-
-asArgumentsTo
-  :: NonEmpty TyCon
-  -> Type
-  -> Maybe [Type]
-asArgumentsTo (toList -> expectedTyCons) tp = do
-  (actualTyCon, args) <- splitTyConApp_maybe tp
-  let (actualArgs, remainingArgs) = splitAt (length expectedTyCons - 1) args
-  let actualTypes   = mkTyConTy actualTyCon : actualArgs
-  let expectedTypes = fmap mkTyConTy expectedTyCons
-  guard (eqTypeList actualTypes expectedTypes)
-  pure remainingArgs
-
-toArgumentsTo
-  :: NonEmpty TyCon
-  -> [Type] -> Type
-toArgumentsTo (tyCon :| tyCons) tps
-  = mkTyConApp tyCon (fmap mkTyConTy tyCons ++ tps)
-
-asBinaryApplication
-  :: NonEmpty TyCon
-  -> Type
-  -> Maybe (Type, Type)
-asBinaryApplication tyCons tp = do
-  args <- asArgumentsTo tyCons tp
-  case args of
-    [arg1, arg2] -> pure (arg1, arg2)
-    _ -> Nothing
-
-toBinaryApplication
-  :: NonEmpty TyCon
-  -> Type -> Type -> Type
-toBinaryApplication tyCons lhs rhs
-  = toArgumentsTo tyCons [lhs, rhs]
-
-asLeftAssociativeApplication
-  :: NonEmpty TyCon
-  -> Type
-  -> Maybe (Type, Type, Type)
-asLeftAssociativeApplication tyCons args123 = do
-  (args12, arg3) <- asBinaryApplication tyCons args123
-  (arg1, arg2) <- asBinaryApplication tyCons args12
-  pure (arg1, arg2, arg3)
-
-toRightAssociativeApplication
-  :: NonEmpty TyCon
-  -> Type -> Type -> Type -> Type
-toRightAssociativeApplication tyCons arg1 arg2 arg3
-  = arg1 `op` (arg2 `op` arg3)
-  where
-    op :: Type -> Type -> Type
-    op = toBinaryApplication tyCons
-
-
-rewrite
-  :: Ct
-  -> (Type -> Maybe Type)
-  -> WriterT [ReplaceCt] TcPluginM ()
-rewrite ct f = do
-  for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
-    -- lhs ~ rhs => ...
-    case f lhs of
-      Just lhs' -> do
-        ct' <- lift $ toEqualityConstraint lhs' rhs (ctLoc ct)
-
-        let replaceCt :: ReplaceCt
-            replaceCt = ReplaceCt
-              { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs
-              , replacedConstraint     = ct
-              , replacementConstraints = [ct']
-              }
-        tell [replaceCt]
-      Nothing -> do
-        case f rhs of
-          Just rhs' -> do
-            ct' <- lift $ toEqualityConstraint lhs rhs' (ctLoc ct)
-
-            let replaceCt :: ReplaceCt
-                replaceCt = ReplaceCt
-                  { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs rhs'
-                  , replacedConstraint     = ct
-                  , replacementConstraints = [ct']
-                  }
-            tell [replaceCt]
-          Nothing -> do
-            pure ()
 
 solve
   :: (TyCon, TyCon)  -- ^ (type family (++), kind *)
@@ -211,12 +113,28 @@ solve (appendTyCon, starTyCon) _ _ cts = do
   replaceCts <- execWriterT $ do
     for_ cts $ \ct -> do
       -- ct => ...
-      rewrite ct $ \typeExpr -> do
-        -- ... (arg1 ++ arg2) ++ arg3 ...
-        (arg1, arg2, arg3) <- asLeftAssociativeApplication appendTyCons typeExpr
+      for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
+        -- lhs ~ rhs => ...
 
-        -- ... arg1 ++ (arg2 ++ arg3) ...
-        Just $ toRightAssociativeApplication appendTyCons arg1 arg2 arg3
+        let lhsTree = asTypeTree appendTyCons lhs
+        let rhsTree = asTypeTree appendTyCons rhs
+        let isCanonicalTree t = isSingletonTree t
+                             || isRightAssociativeTree t
+        let canonicalize = toRightAssociativeTree . toList
+        unless (isCanonicalTree lhsTree && isCanonicalTree rhsTree) $ do
+          -- lhs' ~ rhs' => ...
+          let lhs' = toTypeTree appendTyCons (canonicalize lhsTree)
+          let rhs' = toTypeTree appendTyCons (canonicalize rhsTree)
+
+          ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
+
+          let replaceCt :: ReplaceCt
+              replaceCt = ReplaceCt
+                { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs'
+                , replacedConstraint     = ct
+                , replacementConstraints = [ct']
+                }
+          tell [replaceCt]
   pure $ combineReplaceCts replaceCts
   where
     -- Since '++' is kind-polymorphic, its first argument is '*'

@@ -21,23 +21,29 @@ isSingletonTree _
 
 isLeftAssociativeTree
   :: Tree a -> Bool
-isLeftAssociativeTree Nil
+isLeftAssociativeTree (Leaf _)
   = True
 isLeftAssociativeTree (Branch t (Leaf _))
   = isLeftAssociativeTree t
+isLeftAssociativeTree _
+  = False
 
 isRightAssociativeTree
   :: Tree a -> Bool
-isRightAssociativeTree Nil
+isRightAssociativeTree (Leaf _)
   = True
 isRightAssociativeTree (Branch (Leaf _) t)
   = isRightAssociativeTree t
+isRightAssociativeTree _
+  = False
 
 
 toLeftAssociativeTree
   :: [a] -> Tree a
 toLeftAssociativeTree []
   = Nil
+toLeftAssociativeTree [x]
+  = Leaf x
 toLeftAssociativeTree xs
   = toLeftAssociativeTree (init xs) `Branch` Leaf (last xs)
 
@@ -45,5 +51,7 @@ toRightAssociativeTree
   :: [a] -> Tree a
 toRightAssociativeTree []
   = Nil
+toRightAssociativeTree [x]
+  = Leaf x
 toRightAssociativeTree (x:xs)
   = Leaf x `Branch` toRightAssociativeTree xs
