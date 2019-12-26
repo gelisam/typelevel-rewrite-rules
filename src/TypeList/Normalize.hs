@@ -17,7 +17,7 @@ import TcPluginM (TcPluginM, newCoercionHole, tcLookupTyCon)
 import TcRnTypes
 import TcType (TcPredType)
 import TyCon (TyCon)
-import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
+import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, eqType, mkPrimEqPred)
 import qualified FastString
 
 import TypeList.Tree
@@ -118,23 +118,50 @@ solve (appendTyCon, starTyCon) _ _ cts = do
 
         let lhsTree = asTypeTree appendTyCons lhs
         let rhsTree = asTypeTree appendTyCons rhs
-        let isCanonicalTree t = isSingletonTree t
-                             || isRightAssociativeTree t
-        let canonicalize = toRightAssociativeTree . toList
-        unless (isCanonicalTree lhsTree && isCanonicalTree rhsTree) $ do
-          -- lhs' ~ rhs' => ...
-          let lhs' = toTypeTree appendTyCons (canonicalize lhsTree)
-          let rhs' = toTypeTree appendTyCons (canonicalize rhsTree)
+        let canonicalize = toRightAssociativeTree
+        let isAlreadyCanonical t = isSingletonTree t
+                                || isRightAssociativeTree t
+        unless (isAlreadyCanonical lhsTree && isAlreadyCanonical rhsTree) $ do
+          let lhsList = toList lhsTree
+          let rhsList = toList rhsTree
 
-          ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
+          let commonPrefix = takeWhile (uncurry eqType)
+                           $ zip lhsList rhsList
+          let commonSuffix = reverse
+                           $ takeWhile (uncurry eqType)
+                           $ zip (reverse lhsList)
+                                 (reverse rhsList)
 
-          let replaceCt :: ReplaceCt
-              replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs'
-                , replacedConstraint     = ct
-                , replacementConstraints = [ct']
-                }
-          tell [replaceCt]
+          let simplify = drop (length commonPrefix)
+                       . reverse
+                       . drop (length commonSuffix)
+                       . reverse
+          let simplifiedLhsList = simplify lhsList
+          let simplifiedRhsList = simplify rhsList
+
+          if null simplifiedLhsList && null simplifiedRhsList
+          then do
+            let replaceCt :: ReplaceCt
+                replaceCt = ReplaceCt
+                  { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs rhs
+                  , replacedConstraint     = ct
+                  , replacementConstraints = []
+                  }
+            tell [replaceCt]
+          else do
+            -- lhs' ~ rhs' => ...
+            let lhs' = toTypeTree appendTyCons (canonicalize simplifiedLhsList)
+            let rhs' = toTypeTree appendTyCons (canonicalize simplifiedRhsList)
+
+            ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
+
+            let replaceCt :: ReplaceCt
+                replaceCt = ReplaceCt
+                  { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs rhs
+                  , replacedConstraint     = ct
+                  , replacementConstraints = [ct']
+                  }
+            tell [replaceCt]
   pure $ combineReplaceCts replaceCts
   where
     -- Since '++' is kind-polymorphic, its first argument is '*'
