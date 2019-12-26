@@ -72,5 +72,15 @@ ex2e :: proxy as
 ex2e _ _ _ r = r
 
 
+ex3a :: (lhs ++ xs ++ rhs) ~ (lhs ++ ys ++ rhs)
+     => (xs ~ ys => r)
+     -> proxy lhs
+     -> proxy xs
+     -> proxy ys
+     -> proxy rhs
+     -> r
+ex3a r _ _ _ _ = r
+
+
 main :: IO ()
 main = putStrLn "typechecks."
