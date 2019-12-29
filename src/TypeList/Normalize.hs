@@ -6,20 +6,18 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty((:|)))
-import GHC.TcPluginM.Extra (evByFiat, lookupModule, lookupName)
+import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
-import Module (mkModuleName)
-import OccName (mkTcOcc)
 import Plugins (Plugin(pluginRecompile, tcPlugin), defaultPlugin, purePlugin)
 import TcEvidence (EvTerm)
-import TcPluginM (TcPluginM, newCoercionHole, tcLookupTyCon)
+import TcPluginM (TcPluginM, newCoercionHole)
 import TcRnTypes
 import TcType (TcPredType)
 import TyCon (TyCon)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
-import qualified FastString
 
+import TypeList.Lookup
 import TypeList.Tree
 import TypeList.TypeExpr
 
@@ -58,21 +56,6 @@ plugin = defaultPlugin
     }
   , pluginRecompile = purePlugin
   }
-
-lookupTyCon
-  :: String  -- ^ package name
-  -> String  -- ^ module name
-  -> String  -- ^ type constructor/family name
-  -> TcPluginM TyCon
-lookupTyCon packageName moduleName tyConName = do
-  -- TODO: the calling program might not have 'packageName' in their
-  -- dependencies; better print a helpful error message instead of letting GHC
-  -- panic!
-  module_ <- lookupModule (mkModuleName moduleName)
-                          (FastString.fsLit packageName)
-  tcNm <- lookupName module_ (mkTcOcc tyConName)
-  tyCon <- tcLookupTyCon tcNm
-  pure tyCon
 
 
 asEqualityConstraint
