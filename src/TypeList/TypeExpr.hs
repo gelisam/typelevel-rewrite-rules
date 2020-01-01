@@ -64,23 +64,29 @@ toBinaryApplication tyCons lhs rhs
 
 asTypeTree
   :: NonEmpty TyCon
+  -> NonEmpty TyCon
   -> Type -> Tree Type
-asTypeTree tyCons tp
-  = case asBinaryApplication tyCons tp of
+asTypeTree nilTyCons appendTyCons tp
+  = case asBinaryApplication appendTyCons tp of
       Just (lhs, rhs)
-        -> Branch (asTypeTree tyCons lhs)
-                  (asTypeTree tyCons rhs)
+        -> Branch (asTypeTree nilTyCons appendTyCons lhs)
+                  (asTypeTree nilTyCons appendTyCons rhs)
       Nothing
-        -> Leaf tp
+        -> case asArgumentsTo nilTyCons tp of
+             Just []
+               -> Nil
+             _
+               -> Leaf tp
 
 toTypeTree
   :: NonEmpty TyCon
+  -> NonEmpty TyCon
   -> Tree Type -> Type
-toTypeTree tyCons = \case
+toTypeTree nilTyCons appendTyCons = \case
   Nil
-    -> error "toTypeTree Nil: not yet supported"
+    -> toArgumentsTo nilTyCons []
   Leaf x
     -> x
   Branch lhs rhs
-    -> toBinaryApplication tyCons (toTypeTree tyCons lhs)
-                                  (toTypeTree tyCons rhs)
+    -> toBinaryApplication appendTyCons (toTypeTree nilTyCons appendTyCons lhs)
+                                        (toTypeTree nilTyCons appendTyCons rhs)

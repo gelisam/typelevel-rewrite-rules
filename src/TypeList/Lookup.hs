@@ -4,8 +4,9 @@ import GHC.TcPluginM.Extra (lookupModule, lookupName)
 
 -- GHC API
 import Module (mkModuleName)
-import OccName (mkTcOcc)
-import TcPluginM (TcPluginM, tcLookupTyCon)
+import OccName (mkDataOcc, mkTcOcc)
+import TcPluginM (TcPluginM, tcLookupDataCon, tcLookupTyCon)
+import DataCon (DataCon)
 import TyCon (TyCon)
 import qualified FastString
 
@@ -21,6 +22,19 @@ lookupTyCon packageName moduleName tyConName = do
   -- panic!
   module_ <- lookupModule (mkModuleName moduleName)
                           (FastString.fsLit packageName)
-  tcNm <- lookupName module_ (mkTcOcc tyConName)
-  tyCon <- tcLookupTyCon tcNm
+  tyConName_ <- lookupName module_ (mkTcOcc tyConName)
+  tyCon <- tcLookupTyCon tyConName_
   pure tyCon
+
+lookupDataCon
+  :: String  -- ^ package name
+  -> String  -- ^ module name
+  -> String  -- ^ data constructor name
+  -> TcPluginM DataCon
+lookupDataCon packageName moduleName dataConName = do
+  -- TODO: (bis)
+  module_ <- lookupModule (mkModuleName moduleName)
+                          (FastString.fsLit packageName)
+  dataConName_ <- lookupName module_ (mkDataOcc dataConName)
+  dataCon <- tcLookupDataCon dataConName_
+  pure dataCon

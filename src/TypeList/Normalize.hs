@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 module TypeList.Normalize (plugin) where
 
 import Control.Monad
@@ -9,6 +9,7 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
+import DataCon
 import Plugins (Plugin(pluginRecompile, tcPlugin), defaultPlugin, purePlugin)
 import TcEvidence (EvTerm)
 import TcPluginM (TcPluginM, newCoercionHole)
@@ -44,13 +45,26 @@ combineReplaceCts replaceCts
     solvedConstraint = (,) <$> evidenceOfCorrectness <*> replacedConstraint
 
 
+data RelevantTyCons = RelevantTyCons
+  { nilTyCon    :: TyCon
+  , appendTyCon :: TyCon
+  , starTyCon   :: TyCon
+  }
+
+lookupRelevantTyCons
+  :: TcPluginM RelevantTyCons
+lookupRelevantTyCons
+    = RelevantTyCons
+  <$> (promoteDataCon <$> lookupDataCon "ghc-prim" "GHC.Types" "[]")
+  <*> lookupTyCon "typelist-normalize" "TypeList.Append" "++"
+  <*> lookupTyCon "ghc-prim" "GHC.Types" "Type"
+
+
 plugin
   :: Plugin
 plugin = defaultPlugin
   { tcPlugin = \_ -> Just $ TcPlugin
-    { tcPluginInit  = (,)
-                  <$> lookupTyCon "typelist-normalize" "TypeList.Append" "++"
-                  <*> lookupTyCon "ghc-prim" "GHC.Types" "Type"
+    { tcPluginInit  = lookupRelevantTyCons
     , tcPluginSolve = solve
     , tcPluginStop  = \_ -> pure ()
     }
@@ -85,29 +99,29 @@ toEqualityConstraint lhs rhs loc = do
 
 
 solve
-  :: (TyCon, TyCon)  -- ^ (type family (++), kind *)
-  -> [Ct]            -- ^ Given constraints
-  -> [Ct]            -- ^ Derived constraints
-  -> [Ct]            -- ^ Wanted constraints
+  :: RelevantTyCons
+  -> [Ct]  -- ^ Given constraints
+  -> [Ct]  -- ^ Derived constraints
+  -> [Ct]  -- ^ Wanted constraints
   -> TcPluginM TcPluginResult
 solve _ _ _ [] = do
   pure $ TcPluginOk [] []
-solve (appendTyCon, starTyCon) _ _ cts = do
+solve (RelevantTyCons {..}) _ _ cts = do
   replaceCts <- execWriterT $ do
     for_ cts $ \ct -> do
       -- ct => ...
       for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
         -- lhs ~ rhs => ...
 
-        let lhsTree = asTypeTree appendTyCons lhs
-        let rhsTree = asTypeTree appendTyCons rhs
+        let lhsTree = asTypeTree nilTyCons appendTyCons lhs
+        let rhsTree = asTypeTree nilTyCons appendTyCons rhs
         let isCanonicalTree t = isSingletonTree t
                              || isRightAssociativeTree t
         let canonicalize = toRightAssociativeTree . toList
         unless (isCanonicalTree lhsTree && isCanonicalTree rhsTree) $ do
           -- lhs' ~ rhs' => ...
-          let lhs' = toTypeTree appendTyCons (canonicalize lhsTree)
-          let rhs' = toTypeTree appendTyCons (canonicalize rhsTree)
+          let lhs' = toTypeTree nilTyCons appendTyCons (canonicalize lhsTree)
+          let rhs' = toTypeTree nilTyCons appendTyCons (canonicalize rhsTree)
 
           ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
 
@@ -120,6 +134,10 @@ solve (appendTyCon, starTyCon) _ _ cts = do
           tell [replaceCt]
   pure $ combineReplaceCts replaceCts
   where
+    -- Since @'[]@ is kind-polymorphic, its first argument is '*'
+    nilTyCons :: NonEmpty TyCon
+    nilTyCons = nilTyCon :| [starTyCon]
+
     -- Since '++' is kind-polymorphic, its first argument is '*'
     appendTyCons :: NonEmpty TyCon
     appendTyCons = appendTyCon :| [starTyCon]
