@@ -1,4 +1,4 @@
-module TypeList.Lookup where
+module TypeLevel.Lookup where
 
 import GHC.TcPluginM.Extra (lookupModule, lookupName)
 

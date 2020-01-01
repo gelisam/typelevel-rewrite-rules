@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module TypeList.Normalize (plugin) where
+module TypeLevel.Rewrite (plugin) where
 
 import Control.Monad
 import Control.Monad.Trans.Class
@@ -18,9 +18,9 @@ import TcType (TcPredType)
 import TyCon (TyCon)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
 
-import TypeList.Lookup
-import TypeList.Tree
-import TypeList.TypeExpr
+import TypeLevel.Lookup
+import TypeLevel.Tree
+import TypeLevel.TypeExpr
 
 -- printf-debugging:
 --import TcPluginM (tcPluginIO)
@@ -56,7 +56,7 @@ lookupRelevantTyCons
 lookupRelevantTyCons
     = RelevantTyCons
   <$> (promoteDataCon <$> lookupDataCon "ghc-prim" "GHC.Types" "[]")
-  <*> lookupTyCon "typelevel-rewrite-rules" "TypeList.Append" "++"
+  <*> lookupTyCon "typelevel-rewrite-rules" "TypeLevel.Append" "++"
   <*> lookupTyCon "ghc-prim" "GHC.Types" "Type"
 
 
@@ -127,7 +127,7 @@ solve (RelevantTyCons {..}) _ _ cts = do
 
           let replaceCt :: ReplaceCt
               replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evByFiat "TypeList.Normalize" lhs' rhs'
+                { evidenceOfCorrectness  = evByFiat "TypeLevel.Normalize" lhs' rhs'
                 , replacedConstraint     = ct
                 , replacementConstraints = [ct']
                 }

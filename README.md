@@ -4,6 +4,6 @@
 
 A typechecker plugin solving equations involving type-level lists. If GHC complains that it doesn't know how to deduce `((as ++ bs) ++ cs) ~ (as ++ (bs ++ cs))`, add
 
-    {-# OPTIONS_GHC -fplugin TypeList.Normalize #-}
+    {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite #-}
 
 to make the error go away.

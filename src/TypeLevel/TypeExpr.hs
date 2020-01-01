@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase, ViewPatterns #-}
-module TypeList.TypeExpr where
+module TypeLevel.TypeExpr where
 
 import Control.Monad
 import Data.Foldable
@@ -9,7 +9,7 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 import TyCon (TyCon)
 import Type (Type, eqType, mkTyConApp, mkTyConTy, splitTyConApp_maybe)
 
-import TypeList.Tree
+import TypeLevel.Tree
 
 
 -- 'Type' does not have an 'Eq' instance

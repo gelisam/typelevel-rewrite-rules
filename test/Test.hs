@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
-{-# OPTIONS_GHC -fplugin TypeList.Normalize #-}
-import TypeList.Append
+{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite #-}
+import TypeLevel.Append
 
 
 ex1a :: (((as ++ '[]) ++ (bs ++ '[])) ~ (as ++ bs) => r)

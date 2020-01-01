@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFoldable #-}
-module TypeList.Tree where
+module TypeLevel.Tree where
 
 
 -- |

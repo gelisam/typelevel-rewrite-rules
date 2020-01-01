@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, PolyKinds, TypeFamilies, TypeOperators #-}
-module TypeList.Append where
+module TypeLevel.Append where
 
 type family (++) as bs where
   '[]       ++ bs = bs
