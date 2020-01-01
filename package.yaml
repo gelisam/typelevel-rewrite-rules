@@ -1,9 +1,9 @@
-name:                typelist-normalize
+name:                typelevel-rewrite-rules
 version:             0.1.0.0
 #synopsis:            
 #description:         
-homepage:            https://github.com/gelisam/typelist-normalize#readme
-github:              gelisam/typelist-normalize
+homepage:            https://github.com/gelisam/typelevel-rewrite-rules#readme
+github:              gelisam/typelevel-rewrite-rules
 license:             PublicDomain
 author:              Samuel Gélineau
 maintainer:          gelisam+github@gmail.com
@@ -28,4 +28,4 @@ tests:
     source-dirs: test
     main: Test.hs
     dependencies:
-      - typelist-normalize
+      - typelevel-rewrite-rules

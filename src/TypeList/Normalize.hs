@@ -56,7 +56,7 @@ lookupRelevantTyCons
 lookupRelevantTyCons
     = RelevantTyCons
   <$> (promoteDataCon <$> lookupDataCon "ghc-prim" "GHC.Types" "[]")
-  <*> lookupTyCon "typelist-normalize" "TypeList.Append" "++"
+  <*> lookupTyCon "typelevel-rewrite-rules" "TypeList.Append" "++"
   <*> lookupTyCon "ghc-prim" "GHC.Types" "Type"
 
 
