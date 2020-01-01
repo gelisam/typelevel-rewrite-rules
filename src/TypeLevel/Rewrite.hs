@@ -55,9 +55,9 @@ lookupRelevantTyCons
   :: TcPluginM RelevantTyCons
 lookupRelevantTyCons
     = RelevantTyCons
-  <$> (promoteDataCon <$> lookupDataCon "ghc-prim" "GHC.Types" "[]")
-  <*> lookupTyCon "typelevel-rewrite-rules" "TypeLevel.Append" "++"
-  <*> lookupTyCon "ghc-prim" "GHC.Types" "Type"
+  <$> (promoteDataCon <$> lookupDataCon "GHC.Types" "[]")
+  <*> lookupTyCon "TypeLevel.Append" "++"
+  <*> lookupTyCon "GHC.Types" "Type"
 
 
 plugin

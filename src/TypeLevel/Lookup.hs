@@ -1,40 +1,52 @@
+{-# LANGUAGE LambdaCase #-}
 module TypeLevel.Lookup where
 
-import GHC.TcPluginM.Extra (lookupModule, lookupName)
+import qualified GHC.TcPluginM.Extra as TcPluginM
 
 -- GHC API
-import Module (mkModuleName)
-import OccName (mkDataOcc, mkTcOcc)
-import TcPluginM (TcPluginM, tcLookupDataCon, tcLookupTyCon)
 import DataCon (DataCon)
+import DynFlags (getDynFlags)
+import Finder (cannotFindModule)
+import Module (Module, ModuleName, mkModuleName)
+import OccName (mkDataOcc, mkTcOcc)
+import Panic (panicDoc)
+import TcPluginM
+  ( FindResult(Found), TcPluginM, findImportedModule, tcLookupDataCon, tcLookupTyCon
+  , unsafeTcPluginTcM
+  )
 import TyCon (TyCon)
-import qualified FastString
 
+
+lookupModule
+  :: String  -- ^ module name
+  -> TcPluginM Module
+lookupModule moduleNameStr = do
+  let moduleName :: ModuleName
+      moduleName = mkModuleName moduleNameStr
+  findImportedModule moduleName Nothing >>= \case
+    Found _ module_ -> do
+      pure module_
+    findResult -> do
+      dynFlags <- unsafeTcPluginTcM getDynFlags
+      panicDoc ("TypeLevel.Lookup.lookupModule " ++ show moduleNameStr)
+             $ cannotFindModule dynFlags moduleName findResult
 
 lookupTyCon
-  :: String  -- ^ package name
-  -> String  -- ^ module name
+  :: String  -- ^ module name
   -> String  -- ^ type constructor/family name
   -> TcPluginM TyCon
-lookupTyCon packageName moduleName tyConName = do
-  -- TODO: the calling program might not have 'packageName' in their
-  -- dependencies; better print a helpful error message instead of letting GHC
-  -- panic!
-  module_ <- lookupModule (mkModuleName moduleName)
-                          (FastString.fsLit packageName)
-  tyConName_ <- lookupName module_ (mkTcOcc tyConName)
-  tyCon <- tcLookupTyCon tyConName_
+lookupTyCon moduleNameStr tyConNameStr = do
+  module_ <- lookupModule moduleNameStr
+  tyConName <- TcPluginM.lookupName module_ (mkTcOcc tyConNameStr)
+  tyCon <- tcLookupTyCon tyConName
   pure tyCon
 
 lookupDataCon
-  :: String  -- ^ package name
-  -> String  -- ^ module name
+  :: String  -- ^ module name
   -> String  -- ^ data constructor name
   -> TcPluginM DataCon
-lookupDataCon packageName moduleName dataConName = do
-  -- TODO: (bis)
-  module_ <- lookupModule (mkModuleName moduleName)
-                          (FastString.fsLit packageName)
-  dataConName_ <- lookupName module_ (mkDataOcc dataConName)
-  dataCon <- tcLookupDataCon dataConName_
+lookupDataCon moduleNameStr dataConNameStr = do
+  module_ <- lookupModule moduleNameStr
+  dataConName <- TcPluginM.lookupName module_ (mkDataOcc dataConNameStr)
+  dataCon <- tcLookupDataCon dataConName
   pure dataCon
