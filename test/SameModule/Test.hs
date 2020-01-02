@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
 --{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
---                -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]
---                -fplugin-opt=TypeLevel.Rewrite:SameModule.Test.++ #-}
+--                -fplugin-opt=TypeLevel.Rewrite:(a)SameModule.Test.++('GHC.Types.[])=a
+--                -fplugin-opt=TypeLevel.Rewrite:((a)SameModule.Test.++(b))SameModule.Test.++(c)=(a)SameModule.Test.++((b)SameModule.Test.++(c)) #-}
 module SameModule.Test where
 
 -- doesn't work, fails with:
