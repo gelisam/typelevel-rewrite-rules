@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
-{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite -fplugin-opt='GHC.Types.[] -fplugin-opt=Data.Vinyl.TypeLevel.++ #-}
+{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
+                -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]
+                -fplugin-opt=TypeLevel.Rewrite:Data.Vinyl.TypeLevel.++ #-}
 module Data.Vinyl.TypeLevel.Test where
 
 import Data.Vinyl.TypeLevel

@@ -4,7 +4,9 @@
 
 A typechecker plugin solving equations involving type-level lists. If GHC complains that it doesn't know how to deduce `((as ++ bs) ++ cs) ~ (as ++ (bs ++ cs))` or `(as ++ '[]) ~ as`, add
 
-    {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite #-}
+    {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
+                    -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]
+                    -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.++ #-}
 
 to make the error go away.
 

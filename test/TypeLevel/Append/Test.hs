@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
-{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite -fplugin-opt='GHC.Types.[] -fplugin-opt=TypeLevel.Append.++ #-}
+{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
+                -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]
+                -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.++ #-}
 module TypeLevel.Append.Test where
 
 import TypeLevel.Append

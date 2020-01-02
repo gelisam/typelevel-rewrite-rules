@@ -59,7 +59,9 @@ lookupRelevantTyCons [nilFQN, appendFQN]
   <*> lookupFQN appendFQN
   <*> lookupTyCon "GHC.Types" "Type"
 lookupRelevantTyCons commandLineOptions
-    = error $ "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite -fplugin-opt='GHC.Types.[] -fplugin-opt=TypeLevel.Append.++ #-}\n"
+    = error $ "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite\n"
+           ++ "                       -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]\n"
+           ++ "                       -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.++ #-}\n"
            ++ "expected: " ++ show ["'GHC.Types.[]", "TypeLevel.Append.++"] ++ "\n"
            ++ "got: " ++ show commandLineOptions
 
