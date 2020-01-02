@@ -17,9 +17,9 @@ import TcType (TcPredType)
 import TyCon (TyCon)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
 
-import TypeLevel.Lookup
-import TypeLevel.Tree
-import TypeLevel.TypeExpr
+import TypeLevel.Rewrite.Lookup
+import TypeLevel.Rewrite.Tree
+import TypeLevel.Rewrite.TypeExpr
 
 -- printf-debugging:
 --import TcPluginM (tcPluginIO)

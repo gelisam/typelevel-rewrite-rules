@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase, ViewPatterns #-}
-module TypeLevel.Lookup where
+module TypeLevel.Rewrite.Lookup where
 
 import Control.Arrow ((***), first)
 import Data.Tuple (swap)

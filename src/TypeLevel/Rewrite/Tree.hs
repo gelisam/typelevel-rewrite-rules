@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFoldable #-}
-module TypeLevel.Tree where
+module TypeLevel.Rewrite.Tree where
 
 
 -- |
