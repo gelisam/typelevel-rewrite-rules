@@ -29,3 +29,4 @@ tests:
     main: Test.hs
     dependencies:
       - typelevel-rewrite-rules
+      - vinyl
