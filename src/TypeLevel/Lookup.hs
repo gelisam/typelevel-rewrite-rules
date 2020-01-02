@@ -2,6 +2,7 @@
 module TypeLevel.Lookup where
 
 import Control.Arrow ((***), first)
+import Data.Tuple (swap)
 import qualified GHC.TcPluginM.Extra as TcPluginM
 
 -- GHC API
@@ -76,7 +77,8 @@ splitFirstDot _
 splitLastDot
   :: String -> Maybe (String, String)
 splitLastDot
-  = fmap (reverse *** reverse)
+  = fmap swap
+  . fmap (reverse *** reverse)
   . splitFirstDot
   . reverse
 
