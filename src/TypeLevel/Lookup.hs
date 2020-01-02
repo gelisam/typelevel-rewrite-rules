@@ -31,6 +31,17 @@ lookupModule moduleNameStr = do
       panicDoc ("TypeLevel.Lookup.lookupModule " ++ show moduleNameStr)
              $ cannotFindModule dynFlags moduleName findResult
 
+-- 'TcPluginM.lookupM' unfortunately fails with a very unhelpful error message
+-- when we look up a name which doesn't exist:
+--
+--   Can't find interface-file declaration for type constructor or class ModuleName.TypeName
+--   Probable cause: bug in .hi-boot file, or inconsistent .hi file
+--   Use -ddump-if-trace to get an idea of which file caused the error
+--
+-- But the true cause isn't a corrupted file, it's simply that the requested
+-- name is not in the given module. I don't know how to fix the error message
+-- (I can't use 'try' nor 'tryM' because we're in the wrong monad)
+
 lookupTyCon
   :: String  -- ^ module name
   -> String  -- ^ type constructor/family name
