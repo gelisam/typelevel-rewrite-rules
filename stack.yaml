@@ -2,6 +2,4 @@ resolver: lts-14.1
 packages:
 - '.'
 
-extra-deps:
-- git: git@github.com:Simspace/on-error.git
-  commit: a0abc0aac0e333f9781960a938ed83272acc86a1
+extra-deps: []
