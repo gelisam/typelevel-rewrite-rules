@@ -53,10 +53,20 @@ data RelevantTyCons = RelevantTyCons
 lookupRelevantTyCons
   :: [CommandLineOption]
   -> TcPluginM RelevantTyCons
-lookupRelevantTyCons [nilFQN, appendFQN]
+lookupRelevantTyCons ["(a)SamePackage.Append.++('GHC.Types.[])=a", "((a)SamePackage.Append.++(b))SamePackage.Append.++(c)=(a)SamePackage.Append.++((b)SamePackage.Append.++(c))"]
     = RelevantTyCons
-  <$> lookupFQN nilFQN
-  <*> lookupFQN appendFQN
+  <$> lookupFQN "'GHC.Types.[]"
+  <*> lookupFQN "SamePackage.Append.++"
+  <*> lookupTyCon "GHC.Types" "Type"
+lookupRelevantTyCons ["(a)Data.Vinyl.TypeLevel.++('GHC.Types.[])=a", "((a)Data.Vinyl.TypeLevel.++(b))Data.Vinyl.TypeLevel.++(c)=(a)Data.Vinyl.TypeLevel.++((b)Data.Vinyl.TypeLevel.++(c))"]
+    = RelevantTyCons
+  <$> lookupFQN "'GHC.Types.[]"
+  <*> lookupFQN "Data.Vinyl.TypeLevel.++"
+  <*> lookupTyCon "GHC.Types" "Type"
+lookupRelevantTyCons ["(a)TypeLevel.Append.++('GHC.Types.[])=a", "((a)TypeLevel.Append.++(b))TypeLevel.Append.++(c)=(a)TypeLevel.Append.++((b)TypeLevel.Append.++(c))"]
+    = RelevantTyCons
+  <$> lookupFQN "'GHC.Types.[]"
+  <*> lookupFQN "TypeLevel.Append.++"
   <*> lookupTyCon "GHC.Types" "Type"
 lookupRelevantTyCons commandLineOptions
     = error $ "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite\n"
