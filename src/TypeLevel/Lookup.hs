@@ -1,10 +1,11 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, ViewPatterns #-}
 module TypeLevel.Lookup where
 
+import Control.Arrow ((***), first)
 import qualified GHC.TcPluginM.Extra as TcPluginM
 
 -- GHC API
-import DataCon (DataCon)
+import DataCon (DataCon, promoteDataCon)
 import DynFlags (getDynFlags)
 import Finder (cannotFindModule)
 import Module (Module, ModuleName, mkModuleName)
@@ -61,3 +62,32 @@ lookupDataCon moduleNameStr dataConNameStr = do
   dataConName <- TcPluginM.lookupName module_ (mkDataOcc dataConNameStr)
   dataCon <- tcLookupDataCon dataConName
   pure dataCon
+
+
+splitFirstDot
+  :: String -> Maybe (String, String)
+splitFirstDot ('.' : rhs)
+  = Just ("", rhs)
+splitFirstDot (x : xs)
+  = first (x:) <$> splitFirstDot xs
+splitFirstDot _
+  = Nothing
+
+splitLastDot
+  :: String -> Maybe (String, String)
+splitLastDot
+  = fmap (reverse *** reverse)
+  . splitFirstDot
+  . reverse
+
+-- lookup a Fully-Qualified Name, such as "'GHC.Types.[]" or "TypeLevel.Append.++"
+lookupFQN
+  :: String
+  -> TcPluginM TyCon
+lookupFQN ('\'' : (splitLastDot -> Just (moduleNameStr, dataConNameStr)))
+  = promoteDataCon <$> lookupDataCon moduleNameStr dataConNameStr
+lookupFQN (splitLastDot -> Just (moduleNameStr, tyConNameStr))
+  = lookupTyCon moduleNameStr tyConNameStr
+lookupFQN fqn
+  = error $ "expected " ++ show "ModuleName.TypeName"
+         ++ ", got " ++ show fqn

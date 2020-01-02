@@ -10,7 +10,7 @@ import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
 import DataCon
-import Plugins (Plugin(pluginRecompile, tcPlugin), defaultPlugin, purePlugin)
+import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
 import TcEvidence (EvTerm)
 import TcPluginM (TcPluginM, newCoercionHole)
 import TcRnTypes
@@ -52,19 +52,27 @@ data RelevantTyCons = RelevantTyCons
   }
 
 lookupRelevantTyCons
-  :: TcPluginM RelevantTyCons
-lookupRelevantTyCons
+  :: [CommandLineOption]
+  -> TcPluginM RelevantTyCons
+lookupRelevantTyCons []
     = RelevantTyCons
   <$> (promoteDataCon <$> lookupDataCon "GHC.Types" "[]")
   <*> lookupTyCon "TypeLevel.Append" "++"
   <*> lookupTyCon "GHC.Types" "Type"
+lookupRelevantTyCons [nilFQN, appendFQN]
+    = RelevantTyCons
+  <$> lookupFQN nilFQN
+  <*> lookupFQN appendFQN
+  <*> lookupTyCon "GHC.Types" "Type"
+lookupRelevantTyCons _
+    = error "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite -fplugin-opt='GHC.Types.[] -fplugin-opt=TypeLevel.Append.++ #-}"
 
 
 plugin
   :: Plugin
 plugin = defaultPlugin
-  { tcPlugin = \_ -> Just $ TcPlugin
-    { tcPluginInit  = lookupRelevantTyCons
+  { tcPlugin = \args -> Just $ TcPlugin
+    { tcPluginInit  = lookupRelevantTyCons args
     , tcPluginSolve = solve
     , tcPluginStop  = \_ -> pure ()
     }
