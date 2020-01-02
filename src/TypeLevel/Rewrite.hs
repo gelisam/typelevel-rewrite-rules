@@ -133,7 +133,7 @@ solve (RelevantTyCons {..}) _ _ cts = do
 
           let replaceCt :: ReplaceCt
               replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evByFiat "TypeLevel.Normalize" lhs' rhs'
+                { evidenceOfCorrectness  = evByFiat "TypeLevel.Rewrite" lhs' rhs'
                 , replacedConstraint     = ct
                 , replacementConstraints = [ct']
                 }
