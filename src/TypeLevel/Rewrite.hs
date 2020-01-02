@@ -9,7 +9,6 @@ import Data.List.NonEmpty (NonEmpty((:|)))
 import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
-import DataCon
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
 import TcEvidence (EvTerm)
 import TcPluginM (TcPluginM, newCoercionHole)
@@ -54,18 +53,15 @@ data RelevantTyCons = RelevantTyCons
 lookupRelevantTyCons
   :: [CommandLineOption]
   -> TcPluginM RelevantTyCons
-lookupRelevantTyCons []
-    = RelevantTyCons
-  <$> (promoteDataCon <$> lookupDataCon "GHC.Types" "[]")
-  <*> lookupTyCon "TypeLevel.Append" "++"
-  <*> lookupTyCon "GHC.Types" "Type"
 lookupRelevantTyCons [nilFQN, appendFQN]
     = RelevantTyCons
   <$> lookupFQN nilFQN
   <*> lookupFQN appendFQN
   <*> lookupTyCon "GHC.Types" "Type"
-lookupRelevantTyCons _
-    = error "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite -fplugin-opt='GHC.Types.[] -fplugin-opt=TypeLevel.Append.++ #-}"
+lookupRelevantTyCons commandLineOptions
+    = error $ "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite -fplugin-opt='GHC.Types.[] -fplugin-opt=TypeLevel.Append.++ #-}\n"
+           ++ "expected: " ++ show ["'GHC.Types.[]", "TypeLevel.Append.++"] ++ "\n"
+           ++ "got: " ++ show commandLineOptions
 
 
 plugin
