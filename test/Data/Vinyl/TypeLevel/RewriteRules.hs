@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, PolyKinds, TypeFamilies, TypeOperators #-}
-module Data.Vinyl.TypeLevel.Laws where
+module Data.Vinyl.TypeLevel.RewriteRules where
 
 import Data.Vinyl.TypeLevel
 
