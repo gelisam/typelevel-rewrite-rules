@@ -1,11 +1,10 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards, ViewPatterns #-}
 module TypeLevel.Rewrite (plugin) where
 
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
 import Data.Foldable
-import Data.List.NonEmpty (NonEmpty((:|)))
 import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
@@ -17,12 +16,16 @@ import TcType (TcPredType)
 import TyCon (TyCon)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
 
+-- term-rewriting API
+import Data.Rewriting.Rule (Rule)
+
 import TypeLevel.Rewrite.Lookup
-import TypeLevel.Rewrite.Tree
-import TypeLevel.Rewrite.TypeExpr
+import TypeLevel.Rewrite.TypeRule
+import TypeLevel.Rewrite.TypeTerm
 
 -- printf-debugging:
 --import TcPluginM (tcPluginIO)
+--import TypeLevel.Rewrite.PrettyPrint
 --import Outputable
 ----tcPluginIO $ print ("foo", showSDocUnsafe $ ppr foo)
 
@@ -47,7 +50,6 @@ combineReplaceCts replaceCts
 data RelevantTyCons = RelevantTyCons
   { nilTyCon    :: TyCon
   , appendTyCon :: TyCon
-  , starTyCon   :: TyCon
   }
 
 lookupRelevantTyCons
@@ -57,17 +59,14 @@ lookupRelevantTyCons ["(a)SamePackage.Append.++('GHC.Types.[])=a", "((a)SamePack
     = RelevantTyCons
   <$> lookupFQN "'GHC.Types.[]"
   <*> lookupFQN "SamePackage.Append.++"
-  <*> lookupTyCon "GHC.Types" "Type"
 lookupRelevantTyCons ["(a)Data.Vinyl.TypeLevel.++('GHC.Types.[])=a", "((a)Data.Vinyl.TypeLevel.++(b))Data.Vinyl.TypeLevel.++(c)=(a)Data.Vinyl.TypeLevel.++((b)Data.Vinyl.TypeLevel.++(c))"]
     = RelevantTyCons
   <$> lookupFQN "'GHC.Types.[]"
   <*> lookupFQN "Data.Vinyl.TypeLevel.++"
-  <*> lookupTyCon "GHC.Types" "Type"
 lookupRelevantTyCons ["(a)TypeLevel.Append.++('GHC.Types.[])=a", "((a)TypeLevel.Append.++(b))TypeLevel.Append.++(c)=(a)TypeLevel.Append.++((b)TypeLevel.Append.++(c))"]
     = RelevantTyCons
   <$> lookupFQN "'GHC.Types.[]"
   <*> lookupFQN "TypeLevel.Append.++"
-  <*> lookupTyCon "GHC.Types" "Type"
 lookupRelevantTyCons commandLineOptions
     = error $ "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite\n"
            ++ "                       -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]\n"
@@ -75,12 +74,20 @@ lookupRelevantTyCons commandLineOptions
            ++ "expected: " ++ show ["'GHC.Types.[]", "TypeLevel.Append.++"] ++ "\n"
            ++ "got: " ++ show commandLineOptions
 
+monoidRules
+  :: RelevantTyCons
+  -> [Rule TyCon String]
+monoidRules (RelevantTyCons {..})
+  = [ rightIdentityRule nilTyCon appendTyCon
+    , rightAssociativityRule appendTyCon
+    ]
+
 
 plugin
   :: Plugin
 plugin = defaultPlugin
   { tcPlugin = \args -> Just $ TcPlugin
-    { tcPluginInit  = lookupRelevantTyCons args
+    { tcPluginInit  = monoidRules <$> lookupRelevantTyCons args
     , tcPluginSolve = solve
     , tcPluginStop  = \_ -> pure ()
     }
@@ -115,29 +122,29 @@ toEqualityConstraint lhs rhs loc = do
 
 
 solve
-  :: RelevantTyCons
+  :: [Rule TyCon String]
   -> [Ct]  -- ^ Given constraints
   -> [Ct]  -- ^ Derived constraints
   -> [Ct]  -- ^ Wanted constraints
   -> TcPluginM TcPluginResult
 solve _ _ _ [] = do
   pure $ TcPluginOk [] []
-solve (RelevantTyCons {..}) _ _ cts = do
+solve rules _ _ cts = do
   replaceCts <- execWriterT $ do
     for_ cts $ \ct -> do
       -- ct => ...
       for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
         -- lhs ~ rhs => ...
 
-        let lhsTree = asTypeTree nilTyCons appendTyCons lhs
-        let rhsTree = asTypeTree nilTyCons appendTyCons rhs
-        let isCanonicalTree t = isSingletonTree t
-                             || isRightAssociativeTree t
-        let canonicalize = toRightAssociativeTree . toList
-        unless (isCanonicalTree lhsTree && isCanonicalTree rhsTree) $ do
+        let lhsTypeTerm = toTypeTerm lhs
+        let rhsTypeTerm = toTypeTerm rhs
+        let lhsTypeTerm' = applyRules rules lhsTypeTerm
+        let rhsTypeTerm' = applyRules rules rhsTypeTerm
+
+        unless (lhsTypeTerm' == lhsTypeTerm && rhsTypeTerm' == rhsTypeTerm) $ do
           -- lhs' ~ rhs' => ...
-          let lhs' = toTypeTree nilTyCons appendTyCons (canonicalize lhsTree)
-          let rhs' = toTypeTree nilTyCons appendTyCons (canonicalize rhsTree)
+          let lhs' = toType lhsTypeTerm'
+          let rhs' = toType rhsTypeTerm'
 
           ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
 
@@ -149,11 +156,3 @@ solve (RelevantTyCons {..}) _ _ cts = do
                 }
           tell [replaceCt]
   pure $ combineReplaceCts replaceCts
-  where
-    -- Since @'[]@ is kind-polymorphic, its first argument is '*'
-    nilTyCons :: NonEmpty TyCon
-    nilTyCons = nilTyCon :| [starTyCon]
-
-    -- Since '++' is kind-polymorphic, its first argument is '*'
-    appendTyCons :: NonEmpty TyCon
-    appendTyCons = appendTyCon :| [starTyCon]
