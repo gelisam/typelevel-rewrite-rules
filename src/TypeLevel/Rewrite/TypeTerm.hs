@@ -20,10 +20,10 @@ toTypeTerm (splitTyConApp_maybe -> Just (tyCon, args))
 toTypeTerm tp
   = Var (TypeEq tp)
 
-toType
+fromTypeTerm
   :: TypeTerm -> Type
-toType = \case
+fromTypeTerm = \case
   Var x
     -> unTypeEq x
   Fun tyCon args
-    -> mkTyConApp tyCon (fmap toType args)
+    -> mkTyConApp tyCon (fmap fromTypeTerm args)

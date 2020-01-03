@@ -5,6 +5,7 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
 import Data.Foldable
+import Data.Traversable
 import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
@@ -13,19 +14,20 @@ import TcEvidence (EvTerm)
 import TcPluginM (TcPluginM, newCoercionHole)
 import TcRnTypes
 import TcType (TcPredType)
-import TyCon (TyCon)
+import TyCon (TyCon, isTypeSynonymTyCon, synTyConDefn_maybe)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule)
 
 import TypeLevel.Rewrite.Lookup
+import TypeLevel.Rewrite.PrettyPrint
 import TypeLevel.Rewrite.TypeRule
+import TypeLevel.Rewrite.TypeTemplate
 import TypeLevel.Rewrite.TypeTerm
 
 -- printf-debugging:
 --import TcPluginM (tcPluginIO)
---import TypeLevel.Rewrite.PrettyPrint
 --import Outputable
 ----tcPluginIO $ print ("foo", showSDocUnsafe $ ppr foo)
 
@@ -47,47 +49,64 @@ combineReplaceCts replaceCts
     solvedConstraint = (,) <$> evidenceOfCorrectness <*> replacedConstraint
 
 
-data RelevantTyCons = RelevantTyCons
-  { nilTyCon    :: TyCon
-  , appendTyCon :: TyCon
-  }
+usage
+  :: String  -- ^ expected
+  -> String  -- ^ actual
+  -> TcPluginM a
+usage expected actual
+  = error $ "usage:\n"
+         ++ "  {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite\n"
+         ++ "                  -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.RightIdentity\n"
+         ++ "                  -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.RightAssociative #-}\n"
+         ++ "Where 'TypeLevel.Append' is a module containing a type synonym named 'RightIdentity':\n"
+         ++ "  type RightIdentity as = (as ++ '[]) ~ as\n"
+         ++ "Type expressions which match the left of the '~' will get rewritten to the type\n"
+         ++ "expression on the right of the '~'. Be careful not to introduce cycles!\n"
+         ++ "\n"
+         ++ "expected:\n"
+         ++ "  " ++ expected ++ "\n"
+         ++ "got:\n"
+         ++ "  " ++ actual
 
-lookupRelevantTyCons
+lookupTypeRules
   :: [CommandLineOption]
-  -> TcPluginM RelevantTyCons
-lookupRelevantTyCons ["(a)SamePackage.Append.++('GHC.Types.[])=a", "((a)SamePackage.Append.++(b))SamePackage.Append.++(c)=(a)SamePackage.Append.++((b)SamePackage.Append.++(c))"]
-    = RelevantTyCons
-  <$> lookupFQN "'GHC.Types.[]"
-  <*> lookupFQN "SamePackage.Append.++"
-lookupRelevantTyCons ["(a)Data.Vinyl.TypeLevel.++('GHC.Types.[])=a", "((a)Data.Vinyl.TypeLevel.++(b))Data.Vinyl.TypeLevel.++(c)=(a)Data.Vinyl.TypeLevel.++((b)Data.Vinyl.TypeLevel.++(c))"]
-    = RelevantTyCons
-  <$> lookupFQN "'GHC.Types.[]"
-  <*> lookupFQN "Data.Vinyl.TypeLevel.++"
-lookupRelevantTyCons ["(a)TypeLevel.Append.++('GHC.Types.[])=a", "((a)TypeLevel.Append.++(b))TypeLevel.Append.++(c)=(a)TypeLevel.Append.++((b)TypeLevel.Append.++(c))"]
-    = RelevantTyCons
-  <$> lookupFQN "'GHC.Types.[]"
-  <*> lookupFQN "TypeLevel.Append.++"
-lookupRelevantTyCons commandLineOptions
-    = error $ "usage: {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite\n"
-           ++ "                       -fplugin-opt=TypeLevel.Rewrite:'GHC.Types.[]\n"
-           ++ "                       -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.++ #-}\n"
-           ++ "expected: " ++ show ["'GHC.Types.[]", "TypeLevel.Append.++"] ++ "\n"
-           ++ "got: " ++ show commandLineOptions
-
-monoidRules
-  :: RelevantTyCons
-  -> [Rule TyCon String]
-monoidRules (RelevantTyCons {..})
-  = [ rightIdentityRule nilTyCon appendTyCon
-    , rightAssociativityRule appendTyCon
-    ]
+  -> TcPluginM [TypeRule]
+lookupTypeRules [] = do
+  usage (show ["TypeLevel.Append.RightIdentity", "TypeLevel.Append.RightAssociative"])
+        "[]"
+lookupTypeRules fullyQualifiedTypeSynonyms = do
+  -- ["TypeLevel.Append.RightIdentity", "TypeLevel.Append.RightAssociative"]
+  for fullyQualifiedTypeSynonyms $ \fullyQualifiedTypeSynonym -> do
+    -- "TypeLevel.Append.RightIdentity"
+    case splitLastDot fullyQualifiedTypeSynonym of
+      Nothing -> do
+        usage (show "TypeLevel.Append.RightIdentity")
+              (show fullyQualifiedTypeSynonym)
+      Just (moduleNameStr, tyConNameStr) -> do
+        -- ("TypeLevel.Append", "RightIdentity")
+        tyCon <- lookupTyCon moduleNameStr tyConNameStr  -- FIXME: if tyConNameStr is not found in
+                                                         -- the module, the error message is poor
+        case synTyConDefn_maybe tyCon of
+          Nothing -> do
+            usage ("type " ++ pprTyCon tyCon ++ " ... = ...")
+                  (pprTyCon tyCon ++ " is not a type synonym")
+          Just (_tyVars, definition) -> do
+            -- ([TyVar "as"], Type "(as ++ '[]) ~ as")
+            case toTypeRule_maybe definition of
+              Nothing -> do
+                usage "... ~ ..."
+                      (pprType definition)
+              Just typeRule -> do
+                -- Rule (TypeTree "(as ++ '[])")
+                --      (TypeTree "as")
+                pure typeRule
 
 
 plugin
   :: Plugin
 plugin = defaultPlugin
   { tcPlugin = \args -> Just $ TcPlugin
-    { tcPluginInit  = monoidRules <$> lookupRelevantTyCons args
+    { tcPluginInit  = lookupTypeRules args
     , tcPluginSolve = solve
     , tcPluginStop  = \_ -> pure ()
     }
@@ -122,7 +141,7 @@ toEqualityConstraint lhs rhs loc = do
 
 
 solve
-  :: [Rule TyCon String]
+  :: [TypeRule]
   -> [Ct]  -- ^ Given constraints
   -> [Ct]  -- ^ Derived constraints
   -> [Ct]  -- ^ Wanted constraints
@@ -143,8 +162,8 @@ solve rules _ _ cts = do
 
         unless (lhsTypeTerm' == lhsTypeTerm && rhsTypeTerm' == rhsTypeTerm) $ do
           -- lhs' ~ rhs' => ...
-          let lhs' = toType lhsTypeTerm'
-          let rhs' = toType rhsTypeTerm'
+          let lhs' = fromTypeTerm lhsTypeTerm'
+          let rhs' = fromTypeTerm rhsTypeTerm'
 
           ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
 

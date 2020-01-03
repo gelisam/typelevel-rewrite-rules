@@ -1,9 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, PolyKinds, TypeFamilies, TypeOperators #-}
-module SamePackage.Append where
+module Data.Vinyl.TypeLevel.Laws where
 
-type family (++) as bs where
-  '[]       ++ bs = bs
-  (a ': as) ++ bs = a ': (as ++ bs)
+import Data.Vinyl.TypeLevel
+
 
 type RightIdentity as
   = (as ++ '[]) ~ as

@@ -6,7 +6,7 @@ import Data.List (intercalate)
 -- GHC API
 import Outputable (ppr, showSDocUnsafe)
 import TyCon (TyCon)
-import Type (Type)
+import Type (TyVar, Type)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))
@@ -15,6 +15,7 @@ import Data.Rewriting.Term (Term(Fun, Var))
 
 import TypeLevel.Rewrite.TypeEq
 import TypeLevel.Rewrite.TypeRule
+import TypeLevel.Rewrite.TypeTemplate
 import TypeLevel.Rewrite.TypeTerm
 
 
@@ -49,6 +50,11 @@ pprTyCon
 pprType
   :: Type -> String
 pprType
+  = showSDocUnsafe . ppr
+
+pprTyVar
+  :: TyVar -> String
+pprTyVar
   = showSDocUnsafe . ppr
 
 
@@ -97,6 +103,11 @@ pprReduct pprF pprV pprV' (Reduct {..})
  ++ "}"
 
 
+pprTypeTemplate
+  :: TypeTemplate -> String
+pprTypeTemplate
+  = pprTerm pprTyCon pprTyVar
+
 pprTypeTerm
   :: TypeTerm -> String
 pprTypeTerm
@@ -105,9 +116,9 @@ pprTypeTerm
 pprTypeRule
   :: TypeRule -> String
 pprTypeRule
-  = pprRule pprTyCon show
+  = pprRule pprTyCon pprTyVar
 
 pprTypeReduct
-  :: Reduct TyCon TypeEq String -> String
+  :: Reduct TyCon TypeEq TyVar -> String
 pprTypeReduct
-  = pprReduct pprTyCon pprTypeEq show
+  = pprReduct pprTyCon pprTypeEq pprTyVar

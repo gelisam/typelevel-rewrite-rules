@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
 {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
-                -fplugin-opt=TypeLevel.Rewrite:(a)SamePackage.Append.++('GHC.Types.[])=a
-                -fplugin-opt=TypeLevel.Rewrite:((a)SamePackage.Append.++(b))SamePackage.Append.++(c)=(a)SamePackage.Append.++((b)SamePackage.Append.++(c)) #-}
+                -fplugin-opt=TypeLevel.Rewrite:SamePackage.Append.RightIdentity
+                -fplugin-opt=TypeLevel.Rewrite:SamePackage.Append.RightAssociative #-}
 module SamePackage.Test where
 
 import SamePackage.Append

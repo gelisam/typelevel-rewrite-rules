@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
 {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
-                -fplugin-opt=TypeLevel.Rewrite:(a)Data.Vinyl.TypeLevel.++('GHC.Types.[])=a
-                -fplugin-opt=TypeLevel.Rewrite:((a)Data.Vinyl.TypeLevel.++(b))Data.Vinyl.TypeLevel.++(c)=(a)Data.Vinyl.TypeLevel.++((b)Data.Vinyl.TypeLevel.++(c)) #-}
+                -fplugin-opt=TypeLevel.Rewrite:Data.Vinyl.TypeLevel.Laws.RightIdentity
+                -fplugin-opt=TypeLevel.Rewrite:Data.Vinyl.TypeLevel.Laws.RightAssociative #-}
 module Data.Vinyl.TypeLevel.Test where
 
 import Data.Vinyl.TypeLevel
