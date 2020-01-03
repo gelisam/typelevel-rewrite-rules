@@ -14,16 +14,12 @@ import TcEvidence (EvTerm)
 import TcPluginM (TcPluginM, newCoercionHole)
 import TcRnTypes
 import TcType (TcPredType)
-import TyCon (TyCon, isTypeSynonymTyCon, synTyConDefn_maybe)
+import TyCon (synTyConDefn_maybe)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
-
--- term-rewriting API
-import Data.Rewriting.Rule (Rule)
 
 import TypeLevel.Rewrite.Lookup
 import TypeLevel.Rewrite.PrettyPrint
 import TypeLevel.Rewrite.TypeRule
-import TypeLevel.Rewrite.TypeTemplate
 import TypeLevel.Rewrite.TypeTerm
 
 -- printf-debugging:
