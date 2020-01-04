@@ -1,0 +1,83 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: be1f4ec512c844c6b5ec96aefff0675d039151c848317e83dd984736c99099fd
+
+name:           typelevel-rewrite-rules
+version:        0.1
+synopsis:       Solve type equalities using custom type-level rewrite rules
+category:       Type System
+homepage:       https://github.com/gelisam/typelevel-rewrite-rules#readme
+bug-reports:    https://github.com/gelisam/typelevel-rewrite-rules/issues
+author:         Samuel Gélineau
+maintainer:     gelisam+github@gmail.com
+license:        PublicDomain
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/gelisam/typelevel-rewrite-rules
+
+library
+  exposed-modules:
+      TypeLevel.Append
+      TypeLevel.Rewrite
+      TypeLevel.Rewrite.Internal.Lookup
+      TypeLevel.Rewrite.Internal.PrettyPrint
+      TypeLevel.Rewrite.Internal.Term
+      TypeLevel.Rewrite.Internal.TypeEq
+      TypeLevel.Rewrite.Internal.TypeRule
+      TypeLevel.Rewrite.Internal.TypeTemplate
+      TypeLevel.Rewrite.Internal.TypeTerm
+  other-modules:
+      Paths_typelevel_rewrite_rules
+  hs-source-dirs:
+      src
+  ghc-options: -W -Wall
+  build-depends:
+      base >=4.12
+    , ghc >=8.6.3
+    , ghc-prim >=0.5.3
+    , ghc-tcplugins-extra >=0.3
+    , term-rewriting >=0.3.0.1
+    , transformers >=0.5.5.0
+  default-language: Haskell2010
+
+test-suite error-messages
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  other-modules:
+      Paths_typelevel_rewrite_rules
+  hs-source-dirs:
+      test/error-messages
+  build-depends:
+      base >=4.12
+    , ghc-prim >=0.5.3
+  default-language: Haskell2010
+
+test-suite should-compile
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  other-modules:
+      Data.Vinyl.TypeLevel.RewriteRules
+      Data.Vinyl.TypeLevel.Test
+      MonoKinds.Append
+      MonoKinds.Test
+      SamePackage.Append
+      SamePackage.Test
+      TypeLevel.Append.Test
+      Paths_typelevel_rewrite_rules
+  hs-source-dirs:
+      test/should-compile
+  build-depends:
+      base >=4.12
+    , ghc-prim >=0.5.3
+    , typelevel-rewrite-rules
+    , vinyl
+  default-language: Haskell2010

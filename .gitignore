@@ -1,6 +1,5 @@
 .stack-work/
 stack.yaml.lock
 oldest-supported-lts.yaml.lock
-*.cabal
 dist/
 dist-newstyle/
