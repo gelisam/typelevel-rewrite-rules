@@ -87,6 +87,7 @@ import Prelude hiding ((++))
 import Data.Type.Nat (Nat(Z, S), type (+))
 import Data.Vec.Lazy (Vec, (++))
 
+-- the module which contains the rewrite rules must be imported
 import My.RewriteRules ()
 
 -- now ok!

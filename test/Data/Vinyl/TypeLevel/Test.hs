@@ -6,6 +6,8 @@ module Data.Vinyl.TypeLevel.Test where
 
 import Data.Vinyl.TypeLevel
 
+import Data.Vinyl.TypeLevel.RewriteRules ()
+
 
 ex1a :: (((as ++ '[]) ++ (bs ++ '[])) ~ (as ++ bs) => r)
      -> proxy as
