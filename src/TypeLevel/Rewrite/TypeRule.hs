@@ -29,9 +29,15 @@ applyRules
   :: [TypeRule]
   -> TypeTerm
   -> TypeTerm
-applyRules rules typeTerm
-  = case fullRewrite rules typeTerm of
-      []
-        -> typeTerm
-      reducts
-        -> applyRules rules . result . last $ reducts
+applyRules rules
+  = go (length rules * 100)
+  where
+    go :: Int -> TypeTerm -> TypeTerm
+    go 0 _
+      = error "the rewrite rules form a cycle"
+    go fuel typeTerm
+      = case fullRewrite rules typeTerm of
+          []
+            -> typeTerm
+          reducts
+            -> go (fuel - 1) . result . last $ reducts
