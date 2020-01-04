@@ -27,13 +27,10 @@ cache:
       #- cabal-install
 
 env:
-# if this build fails and you need to bump the lts, remember
-# to also bump the lower bounds in package.yaml to match the
-# versions provided by that new lts!
-- BUILD=stack RESOLVER="lts-8.0"
+- BUILD=stack STACK_YAML="oldest-supported-lts.yaml"
 
-- BUILD=stack RESOLVER="lts-14.19"
-- BUILD=cabal RESOLVER="lts-14.19"
+- BUILD=stack STACK_YAML="stack.yaml"
+- BUILD=cabal STACK_YAML="stack.yaml"
 
 before_install:
 # Download and unpack the stack executable
@@ -43,11 +40,11 @@ before_install:
 # Install a recent version of cabal which supports new-build
 - stack install cabal-install
 # Make sure stack and cabal use the same ghc version
-- export PATH="$(stack --resolver="$RESOLVER" path --compiler-bin):$PATH"
+- export PATH="$(stack --stack-yaml="$STACK_YAML" path --compiler-bin):$PATH"
 
 install:
 # Build the package, and its tests and its docs (stack)
-- if [ "$BUILD" == "stack" ]; then stack --resolver="$RESOLVER" --no-terminal --install-ghc test --no-run-tests --haddock --no-haddock-deps; fi
+- if [ "$BUILD" == "stack" ]; then stack --stack-yaml="$STACK_YAML" --no-terminal --install-ghc test --no-run-tests --haddock --no-haddock-deps; fi
 # Build the package and its tests (cabal)
 - if [ "$BUILD" == "cabal" ]; then ~/.local/bin/cabal update; fi
 - if [ "$BUILD" == "cabal" ]; then ~/.local/bin/cabal sandbox init; fi
@@ -56,6 +53,6 @@ install:
 
 script:
 # Run the tests (stack)
-- if [ "$BUILD" == "stack" ]; then stack --resolver="$RESOLVER" --no-terminal test; fi
+- if [ "$BUILD" == "stack" ]; then stack --stack-yaml="$STACK_YAML" --no-terminal test; fi
 # Run the tests (cabal)
 - if [ "$BUILD" == "cabal" ]; then ~/.local/bin/cabal test; fi

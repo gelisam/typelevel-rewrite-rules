@@ -13,17 +13,17 @@ extra-source-files:
 - CHANGELOG.md
 
 dependencies:
-  - base >= 4.7 && < 5
-  - ghc-prim
+  - base >= 4.12
+  - ghc-prim >= 0.5.3
 
 library:
   source-dirs:      src
   ghc-options: -W -Wall
   dependencies:
-    - ghc
-    - ghc-tcplugins-extra
-    - term-rewriting
-    - transformers
+    - ghc >= 8.6.3
+    - ghc-tcplugins-extra >= 0.3
+    - term-rewriting >= 0.3.0.1
+    - transformers >= 0.5.5.0
 
 tests:
   check-if-it-compiles:
