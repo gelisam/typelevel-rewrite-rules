@@ -1,5 +1,5 @@
 name:                typelevel-rewrite-rules
-version:             0.1.0.0
+version:             0.1
 synopsis:            Solve type equalities using custom type-level rewrite rules
 #description:         
 homepage:            https://github.com/gelisam/typelevel-rewrite-rules#readme
