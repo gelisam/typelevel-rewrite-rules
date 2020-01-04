@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase, ViewPatterns #-}
-module TypeLevel.Rewrite.TypeTerm where
+module TypeLevel.Rewrite.Internal.TypeTerm where
 
 -- GHC API
 import TyCon (TyCon)
@@ -8,7 +8,7 @@ import Type (Type, mkTyConApp, splitTyConApp_maybe)
 -- term-rewriting API
 import Data.Rewriting.Term (Term(Fun, Var))
 
-import TypeLevel.Rewrite.TypeEq
+import TypeLevel.Rewrite.Internal.TypeEq
 
 
 type TypeTerm = Term TyCon TypeEq

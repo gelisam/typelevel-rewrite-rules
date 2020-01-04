@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase, RecordWildCards #-}
-module TypeLevel.Rewrite.PrettyPrint where
+module TypeLevel.Rewrite.Internal.PrettyPrint where
 
 import Data.List (intercalate)
 
@@ -13,10 +13,10 @@ import Data.Rewriting.Rule (Rule(..))
 import Data.Rewriting.Rules (Reduct(..))
 import Data.Rewriting.Term (Term(Fun, Var))
 
-import TypeLevel.Rewrite.TypeEq
-import TypeLevel.Rewrite.TypeRule
-import TypeLevel.Rewrite.TypeTemplate
-import TypeLevel.Rewrite.TypeTerm
+import TypeLevel.Rewrite.Internal.TypeEq
+import TypeLevel.Rewrite.Internal.TypeRule
+import TypeLevel.Rewrite.Internal.TypeTemplate
+import TypeLevel.Rewrite.Internal.TypeTerm
 
 
 pprMaybe

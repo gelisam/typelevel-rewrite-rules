@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase, ViewPatterns #-}
-module TypeLevel.Rewrite.TypeTemplate where
+module TypeLevel.Rewrite.Internal.TypeTemplate where
 
 -- GHC API
 import TyCon (TyCon)

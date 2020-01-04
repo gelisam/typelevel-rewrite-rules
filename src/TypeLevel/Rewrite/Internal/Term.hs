@@ -1,4 +1,4 @@
-module TypeLevel.Rewrite.Term where
+module TypeLevel.Rewrite.Internal.Term where
 
 import Data.Rewriting.Term (Term(Fun))
 

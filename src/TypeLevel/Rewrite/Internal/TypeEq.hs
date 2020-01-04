@@ -1,4 +1,4 @@
-module TypeLevel.Rewrite.TypeEq where
+module TypeLevel.Rewrite.Internal.TypeEq where
 
 import Data.Function
 

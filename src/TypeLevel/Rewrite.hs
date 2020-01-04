@@ -17,10 +17,10 @@ import TcType (TcPredType)
 import TyCon (synTyConDefn_maybe)
 import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
 
-import TypeLevel.Rewrite.Lookup
-import TypeLevel.Rewrite.PrettyPrint
-import TypeLevel.Rewrite.TypeRule
-import TypeLevel.Rewrite.TypeTerm
+import TypeLevel.Rewrite.Internal.Lookup
+import TypeLevel.Rewrite.Internal.PrettyPrint
+import TypeLevel.Rewrite.Internal.TypeRule
+import TypeLevel.Rewrite.Internal.TypeTerm
 
 -- printf-debugging:
 --import TcPluginM (tcPluginIO)

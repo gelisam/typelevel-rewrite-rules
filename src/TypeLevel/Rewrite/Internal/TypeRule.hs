@@ -1,5 +1,5 @@
 {-# LANGUAGE ViewPatterns #-}
-module TypeLevel.Rewrite.TypeRule where
+module TypeLevel.Rewrite.Internal.TypeRule where
 
 -- GHC API
 import Name (getOccString)
@@ -11,8 +11,8 @@ import Data.Rewriting.Rule (Rule(..))
 import Data.Rewriting.Rules (Reduct(result), fullRewrite)
 import Data.Rewriting.Term (Term(Fun))
 
-import TypeLevel.Rewrite.TypeTemplate
-import TypeLevel.Rewrite.TypeTerm
+import TypeLevel.Rewrite.Internal.TypeTemplate
+import TypeLevel.Rewrite.Internal.TypeTerm
 
 
 type TypeRule = Rule TyCon TyVar
