@@ -10,6 +10,7 @@ maintainer:          gelisam+github@gmail.com
 category:            Type System
 extra-source-files:
 - README.md
+- CHANGELOG.md
 
 dependencies:
   - base >= 4.7 && < 5
