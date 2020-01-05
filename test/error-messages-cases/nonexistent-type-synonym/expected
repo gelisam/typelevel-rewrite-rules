@@ -1,0 +1,3 @@
+# FIXME: how to catch this error message and replace it with a nicer one?
+    Can't find interface-file declaration for type constructor or class NonexistentTypeSynonym.RewriteRules.Nonexistent
+      Probable cause: bug in .hi-boot file, or inconsistent .hi file

@@ -3,3 +3,5 @@ stack.yaml.lock
 oldest-supported-lts.yaml.lock
 dist/
 dist-newstyle/
+test/error-messages-cases/*/*.cabal
+test/error-messages-cases/*/stack.yaml

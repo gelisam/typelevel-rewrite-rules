@@ -1,0 +1,7 @@
+dependencies:
+  - base
+  - typelevel-rewrite-rules
+
+library:
+  source-dirs:      src
+  ghc-options: -W -Wall

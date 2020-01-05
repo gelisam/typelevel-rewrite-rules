@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: be1f4ec512c844c6b5ec96aefff0675d039151c848317e83dd984736c99099fd
+-- hash: 1600fa6b0ec24e9a5749bdfecdc4c039222958d94b7d745086dbb365193f71ab
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -47,18 +47,6 @@ library
     , ghc-tcplugins-extra >=0.3
     , term-rewriting >=0.3.0.1
     , transformers >=0.5.5.0
-  default-language: Haskell2010
-
-test-suite error-messages
-  type: exitcode-stdio-1.0
-  main-is: Test.hs
-  other-modules:
-      Paths_typelevel_rewrite_rules
-  hs-source-dirs:
-      test/error-messages
-  build-depends:
-      base >=4.12
-    , ghc-prim >=0.5.3
   default-language: Haskell2010
 
 test-suite should-compile

@@ -32,3 +32,9 @@ tests:
     dependencies:
       - typelevel-rewrite-rules
       - vinyl
+
+  # can't run "stack test error-messages", it locks a file which prevents the
+  # test from running stack on its test packages.
+  #error-messages:
+  #  source-dirs: test/error-messages
+  #  main: Test.hs
