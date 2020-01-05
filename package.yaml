@@ -1,7 +1,7 @@
 name:                typelevel-rewrite-rules
 version:             0.1
 synopsis:            Solve type equalities using custom type-level rewrite rules
-#description:         
+description:         A typechecker plugin which allows the user to specify a set of domain-specific rewrite rules. These get applied whenever the compiler is unable to solve a type equality constraint, in the hope that the rewritten equality constraint will be easier to solve.
 homepage:            https://github.com/gelisam/typelevel-rewrite-rules#readme
 github:              gelisam/typelevel-rewrite-rules
 license:             PublicDomain
