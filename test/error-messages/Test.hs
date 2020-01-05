@@ -50,7 +50,11 @@ main = do
   -- ["malformed-argument", ...]
   caseSubdirs <- FilePath.listDirectory casesDir
 
-  for_ caseSubdirs $ \caseSubdir -> do  -- "malformed-argument"
+  for_ caseSubdirs $ \caseSubdir -> do
+    -- "malformed-argument"
+    let caseName :: Text
+        caseName = Text.pack caseSubdir
+
     -- "/.../test/error-messages-cases/malformed-argument"
     let workingDir :: FilePath
         workingDir = casesDir </> caseSubdir
@@ -77,31 +81,46 @@ main = do
     (exitCode, actualOutputBS) <- Process.readProcessStderr processConfig
     case exitCode of
       ExitSuccess -> do
-        error $ "expected an error message, but " ++ caseSubdir ++ " unexpectedly succeeded!"
+        error $ Text.unpack
+              $ "expected an error message, but " <> caseName <> " unexpectedly succeeded!"
       ExitFailure _ -> do
         let actualOutput :: Text
             actualOutput = Text.decodeUtf8 actualOutputBS
 
-            expectedPrefix :: Text
-            expectedPrefix = Text.pack caseSubdir <> "> "
+            -- "malformed-argument    > build (lib)" -> Just "build (lib)"
+            stripCasePrefix :: Text -> Maybe Text
+            stripCasePrefix t = do
+              t' <- Text.stripPrefix caseName t
+              let t'' = Text.dropWhile (== ' ') t'
+              Text.stripPrefix "> " t''
+
+            -- "Progress\b\b\b\b\b\b\b\bfoo" -> "foo"
+            cleanLine :: Text -> Text
+            cleanLine t = if Text.any (== '\b') t
+                          then cleanLine
+                             $ Text.dropWhile (== '\b')
+                             $ Text.dropWhile (/= '\b')
+                             $ t
+                          else t
+
+            actualLines :: [Text]
+            actualLines = List.mapMaybe stripCasePrefix
+                        . fmap cleanLine
+                        . Text.lines
+                        $ actualOutput
 
             expectedLines :: [Text]
             expectedLines = filter ((== Nothing) . Text.stripPrefix "#")
                           . Text.lines
                           $ expectedOutput
 
-            actualLines :: [Text]
-            actualLines = List.mapMaybe (Text.stripPrefix expectedPrefix)
-                        . Text.lines
-                        $ actualOutput
-
         if expectedLines `List.isInfixOf` actualLines
         then do
           -- malformed-argument test passed
-          putStrLn $ caseSubdir ++ " test passed"
+          Text.putStrLn $ caseName <> " test passed"
         else do
           error $ Text.unpack
-                $ Text.pack caseSubdir <> " test failed\n"
+                $ caseName <> " test failed\n"
                <> "expected:\n"
                <> Text.unlines (map ("  " <>) expectedLines)
                <> "got:\n"
