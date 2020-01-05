@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1ad00871c2c507963c7395fb1de5f5591404a2438606e84ee89470edcdacc5c6
+-- hash: a0aa0b58de9c55fa77a152d9a3aa0be871bfa33439ebe19185cb1283b97d6350
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -42,7 +42,7 @@ library
       src
   ghc-options: -W -Wall
   build-depends:
-      base >=4.12
+      base >=4.12 && <6
     , ghc >=8.6.3
     , ghc-prim >=0.5.3
     , ghc-tcplugins-extra >=0.3
@@ -65,7 +65,7 @@ test-suite should-compile
   hs-source-dirs:
       test/should-compile
   build-depends:
-      base >=4.12
+      base >=4.12 && <6
     , ghc-prim >=0.5.3
     , typelevel-rewrite-rules
     , vinyl
