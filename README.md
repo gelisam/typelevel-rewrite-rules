@@ -29,7 +29,7 @@ simplify xsM empty1 xsN empty2 xsO
   = (((xsM ++ empty1) ++ xsN) ++ empty2) ++ xsO
 ```
 
-This is unfortunate because the equation is valid; for any three concrete `Nat`s `l`, `m` and `n`, ghc would gladly accept the equation as true, but when `l`, `m` and `n` are abstract, it gets stuck.
+This is unfortunate because the equation is valid; for any three concrete `Nat`s `m`, `n` and `o`, ghc would gladly accept the equation as true, but when `m`, `n` and `o` are abstract, it gets stuck.
 
 ```haskell
 -- ok
