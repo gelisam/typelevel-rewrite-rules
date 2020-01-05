@@ -31,6 +31,7 @@ env:
 
 - BUILD=stack STACK_YAML="stack.yaml"
 - BUILD=cabal STACK_YAML="stack.yaml"
+- BUILD=error-messages STACK_YAML="stack.yaml"
 
 before_install:
 # Download and unpack the stack executable
@@ -54,3 +55,5 @@ script:
 - if [ "$BUILD" == "stack" ]; then stack --stack-yaml="$STACK_YAML" --no-terminal test; fi
 # Run the tests (cabal)
 - if [ "$BUILD" == "cabal" ]; then ~/.local/bin/cabal v2-test; fi
+# Run the tests (error-messages)
+- if [ "$BUILD" == "error-messages" ]; then ./test/error-messages/Test.hs
