@@ -142,3 +142,26 @@ recFromNowhere proxy = withNonsense proxy RNil
 ```
 
 A more subtle danger is that even rewrite rules which are valid, such as `(x + y) ~ (y + x)`, can be problematic. The problem with this rule is that the right-hand side matches the left-hand side, and so the rewrite rule can be applied an infinite number of times to switch the arguments back and forth without making any progress. The same problem occurs if both `((m + n) + o) ~ (m + (n + o))` and `(m + (n + o)) ~ ((m + n) + o)` are included, the parentheses can get rearranged back and forth indefinitely.
+
+
+## Troubleshooting
+
+Most error messages should be self-explanatory, but there are a few circumstances in which the ghc API produces a confusing error message without giving me the opportunity to replace it with a better one. So if you encounter one of those confusing error messages, hopefully google will lead you to this page explaining what they mean.
+
+### `"GHC internal error: ‘My.Module.MyRule’ is not in scope during type checking, but it passed the renamer tcl_env of environment: []`
+
+This means you are in `My.Module` and you are trying to use a rewrite rule which is also defined in `My.Module`. This is unfortunately not supported.
+
+Solution: move your rewrite rule to another module and import that module from `My.Module`.
+
+### `attempting to use module ‘My.RewriteRules’ which is not loaded`
+
+This one is annoying because whether it happens or not depends on the order in which ghc chooses to compile your modules. If ghc happens to compile the module which uses your rewrite rules before the module which defines your rewrite rules, you'll get that error message.
+
+Solution: add an `import My.RewriteRules ()` statement to force ghc to compile `My.RewriteRules` first.
+
+### `Can't find interface-file declaration for type constructor or class My.RewriteRules.MyRule`
+
+That error message is misleadingly followed by `Probable cause: bug in .hi-boot file, or inconsistent .hi file`, but the actual cause is that `MyRule` simply isn't defined in `My.RewriteRules`. Maybe it's a typo?
+
+
