@@ -1,6 +1,6 @@
 # Type-Level Rewrite Rules [![Hackage](https://img.shields.io/hackage/v/typelevel-rewrite-rules.svg)](https://hackage.haskell.org/package/typelevel-rewrite-rules) [![Build Status](https://secure.travis-ci.org/gelisam/typelevel-rewrite-rules.png?branch=master)](http://travis-ci.org/gelisam/typelevel-rewrite-rules)
 
-Solve type equalities using custom type-level rewrite rules like `(n + 'Z) ~ n` and `((m + n) + o) ~ (m + (n + o)`.
+Solve type equalities using custom type-level rewrite rules like `(n + 'Z) ~ n` and `((m + n) + o) ~ (m + (n + o))`.
 
 
 ## The problem
