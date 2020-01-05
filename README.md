@@ -148,7 +148,7 @@ A more subtle danger is that even rewrite rules which are valid, such as `(x + y
 
 Most error messages should be self-explanatory, but there are a few circumstances in which the ghc API produces a confusing error message without giving me the opportunity to replace it with a better one. So if you encounter one of those confusing error messages, hopefully google will lead you to this page explaining what they mean.
 
-### `"GHC internal error: ‘My.Module.MyRule’ is not in scope during type checking, but it passed the renamer tcl_env of environment: []`
+### `GHC internal error: ‘My.Module.MyRule’ is not in scope during type checking, but it passed the renamer tcl_env of environment: []`
 
 This means you are in `My.Module` and you are trying to use a rewrite rule which is also defined in `My.Module`. This is unfortunately not supported.
 

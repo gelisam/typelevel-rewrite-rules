@@ -56,4 +56,4 @@ script:
 # Run the tests (cabal)
 - if [ "$BUILD" == "cabal" ]; then ~/.local/bin/cabal v2-test; fi
 # Run the tests (error-messages)
-- if [ "$BUILD" == "error-messages" ]; then ./test/error-messages/Test.hs
+- if [ "$BUILD" == "error-messages" ]; then ./test/error-messages/Test.hs; fi
