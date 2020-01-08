@@ -117,28 +117,30 @@ This plugin is both more general and more dangerous: it allows you to specify an
                 -fplugin-opt=TypeLevel.Rewrite:My.RewriteRules.Nonsense #-}
 module My.Module where
 
-import Data.Functor.Identity
-import Data.Proxy
-import Data.Vinyl
-import Data.Vinyl.TypeLevel
+import Prelude hiding ((++))
+
+import Data.Proxy (Proxy(Proxy))
+import Data.Type.Nat (Nat(Z, S), type (+))
+import Data.Vec.Lazy (Vec((:::), VNil), (++))
 
 import My.RewriteRules ()
 
 withNonsense
-  :: proxy as
-  -> ((as ++ '[]) ~ '[] => r)
+  :: proxy n
+  -> ((n + 'Z) ~ 'Z => r)
   -> r
 withNonsense _ r = r
 
 -- |
--- >>> recFromNowhere (Proxy @'[])
--- {}
--- >>> recFromNowhere (Proxy @'[Int, String])
--- error: Impossible case alternative
+-- >>> recFromNowhere (Proxy @'Z)
+-- VNil
+-- >>> let (n ::: VNil) = recFromNowhere (Proxy @('S 'Z))
+-- >>> n
+-- internal error: interpretBCO: hit a CASEFAIL
 recFromNowhere
-  :: proxy as
-  -> Rec Identity (as ++ '[])
-recFromNowhere proxy = withNonsense proxy RNil
+  :: proxy n
+  -> Vec (n + 'Z) Int
+recFromNowhere proxy = withNonsense proxy VNil
 ```
 
 A more subtle danger is that even rewrite rules which are valid, such as `(x + y) ~ (y + x)`, can be problematic. The problem with this rule is that the right-hand side matches the left-hand side, and so the rewrite rule can be applied an infinite number of times to switch the arguments back and forth without making any progress. The same problem occurs if both `((m + n) + o) ~ (m + (n + o))` and `(m + (n + o)) ~ ((m + n) + o)` are included, the parentheses can get rearranged back and forth indefinitely.
