@@ -183,6 +183,17 @@ That error message is misleadingly followed by `Probable cause: bug in .hi-boot 
 
 Remember, this typechecker plugin is dangerous! Have you considered these other, safer alternatives?
 
+| Approach                                                | Effort                                                     | Limitations             | Safety concerns                         |
+|---------------------------------------------------------|------------------------------------------------------------|-------------------------|-----------------------------------------|
+| [typelevel-rewrite-rules](#readme)                      | state rewrite rules                                        | no commutativity        | :construction: invalid rules, loops     |
+| [Propagate the constraints](#propagate-the-constraints) |                                                            | no recursion            |                                         |
+| [Hasochism](#hasochism)                                 | singletons boilerplate, prove properties, apply properties |                         |                                         |
+| [Axiom](#axiom) (at the call sites)                     | copy-paste equation                                        |                         | :bomb: invalid rules more likely        |
+| [Axiom](#axiom) (when defining properties)              | state properties, apply properties                         |                         | :construction: invalid rules            |
+| [ghc-typelits-natnormalise](#ghc-typelits-natnormalise) |                                                            | `GHC.TypeLits.Nat` only |                                         |
+| [Thoralf](#thoralf)                                     | convert types and functions to Z3                          |                         | :construction: invalid conversion       |
+| [LiquidHaskell](#liquidhaskell)                         | state refined types                                        | builtin types only      | :construction: invalid `assume` pragmas |
+
 
 ### Propagate the constraints
 
