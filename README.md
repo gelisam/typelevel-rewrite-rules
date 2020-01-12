@@ -2,6 +2,18 @@
 
 Solve type equalities using custom type-level rewrite rules like `(n + 'Z) ~ n` and `((m + n) + o) ~ (m + (n + o))`.
 
+* [The problem](#the-problem)
+* [The solution](#the-solution)
+* [Dangers](#dangers)
+* [Troubleshooting](#troubleshooting)
+* [Alternatives](#alternatives)
+  + [Propagate the constraints](#propagate-the-constraints)
+  + [Hasochism](#hasochism)
+  + [Axiom](#axiom)
+  + [ghc-typelits-natnormalise](#ghc-typelits-natnormalise)
+  + [Thoralf](#thoralf)
+  + [LiquidHaskell](#liquidhaskell)
+
 
 ## The problem
 
