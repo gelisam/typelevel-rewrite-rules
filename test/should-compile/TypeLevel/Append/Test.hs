@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE DataKinds, RankNTypes, ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
                 -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.RightIdentity
                 -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.RightAssociative #-}
@@ -74,3 +74,11 @@ ex2e :: proxy as
      -> proxy (as ++ (bs ++ cs))
      -> proxy ((as ++ bs) ++ cs)
 ex2e _ _ _ r = r
+
+ex2f :: forall proxy xs as bs cs r. xs ~ ((as ++ bs) ++ cs)
+     => (xs ~ (as ++ (bs ++ cs)) => r)
+     -> proxy as
+     -> proxy bs
+     -> proxy cs
+     -> r
+ex2f r _ _ _ = r
