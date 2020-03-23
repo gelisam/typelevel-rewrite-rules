@@ -144,11 +144,11 @@ solve
   -> TcPluginM TcPluginResult
 solve _ _ _ [] = do
   pure $ TcPluginOk [] []
-solve rules _ _ cts = do
+solve rules _ _ wanteds = do
   replaceCts <- execWriterT $ do
-    for_ cts $ \ct -> do
-      -- ct => ...
-      for_ (asEqualityConstraint ct) $ \(lhs, rhs) -> do
+    for_ wanteds $ \wanted -> do
+      -- wanted => ...
+      for_ (asEqualityConstraint wanted) $ \(lhs, rhs) -> do
         -- lhs ~ rhs => ...
 
         let lhsTypeTerm = toTypeTerm lhs
@@ -161,13 +161,13 @@ solve rules _ _ cts = do
           let lhs' = fromTypeTerm lhsTypeTerm'
           let rhs' = fromTypeTerm rhsTypeTerm'
 
-          ct' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc ct)
+          wanted' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc wanted)
 
           let replaceCt :: ReplaceCt
               replaceCt = ReplaceCt
                 { evidenceOfCorrectness  = evByFiat "TypeLevel.Rewrite" lhs' rhs'
-                , replacedConstraint     = ct
-                , replacementConstraints = [ct']
+                , replacedConstraint     = wanted
+                , replacementConstraints = [wanted']
                 }
           tell [replaceCt]
   pure $ combineReplaceCts replaceCts
