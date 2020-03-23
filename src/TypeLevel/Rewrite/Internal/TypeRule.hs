@@ -29,6 +29,8 @@ applyRules
   :: [TypeRule]
   -> TypeTerm
   -> TypeTerm
+applyRules []
+  = id
 applyRules rules
   = go (length rules * 100)
   where

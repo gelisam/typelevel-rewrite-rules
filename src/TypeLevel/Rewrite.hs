@@ -19,7 +19,9 @@ import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPre
 
 import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint
+import TypeLevel.Rewrite.Internal.TypeEq
 import TypeLevel.Rewrite.Internal.TypeRule
+import TypeLevel.Rewrite.Internal.TypeSubst
 import TypeLevel.Rewrite.Internal.TypeTerm
 
 -- printf-debugging:
@@ -144,15 +146,24 @@ solve
   -> TcPluginM TcPluginResult
 solve _ _ _ [] = do
   pure $ TcPluginOk [] []
-solve rules _ _ wanteds = do
+solve rules givens _ wanteds = do
+  typeSubst <- execWriterT $ do
+    for_ givens $ \given -> do
+      for_ (asEqualityConstraint given) $ \(lhs, rhs) -> do
+        -- lhs ~ rhs
+        -- where lhs is typically an expression and rhs is typically a variable
+        let var = TypeEq rhs
+        let val = toTypeTerm lhs
+        tell [(var, val)]
+
   replaceCts <- execWriterT $ do
     for_ wanteds $ \wanted -> do
       -- wanted => ...
       for_ (asEqualityConstraint wanted) $ \(lhs, rhs) -> do
         -- lhs ~ rhs => ...
 
-        let lhsTypeTerm = toTypeTerm lhs
-        let rhsTypeTerm = toTypeTerm rhs
+        let lhsTypeTerm = applyTypeSubst typeSubst $ toTypeTerm lhs
+        let rhsTypeTerm = applyTypeSubst typeSubst $ toTypeTerm rhs
         let lhsTypeTerm' = applyRules rules lhsTypeTerm
         let rhsTypeTerm' = applyRules rules rhsTypeTerm
 
