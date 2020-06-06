@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 84defdc4cb3ba0cb23a1f27f1db45b6bf2e36b6eaab7a863b8bfa4a4c9fd20e5
+-- hash: cc23038fab8764d52b391f9c491f8a5554a5229bd6806ea1b1863184289e8789
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -57,6 +57,8 @@ test-suite should-compile
   other-modules:
       Data.Vinyl.TypeLevel.RewriteRules
       Data.Vinyl.TypeLevel.Test
+      GHC.TypeLits.RewriteRules
+      GHC.TypeLits.Test
       MonoKinds.Append
       MonoKinds.Test
       SamePackage.Append
