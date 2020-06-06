@@ -14,6 +14,7 @@ import Data.Rewriting.Rules (Reduct(..))
 import Data.Rewriting.Term (Term(Fun, Var))
 
 import TypeLevel.Rewrite.Internal.TypeEq
+import TypeLevel.Rewrite.Internal.TypeNode
 import TypeLevel.Rewrite.Internal.TypeRule
 import TypeLevel.Rewrite.Internal.TypeTemplate
 import TypeLevel.Rewrite.Internal.TypeTerm
@@ -103,20 +104,32 @@ pprReduct pprF pprV pprV' (Reduct {..})
  ++ "}"
 
 
+pprTypeNode
+  :: TypeNode -> String
+pprTypeNode = \case
+  TyCon tyCon
+    -> "TyCon ("
+    ++ pprTyCon tyCon
+    ++ ")"
+  TyLit tyLit
+    -> "TyLit ("
+    ++ pprTypeEq tyLit
+    ++ ")"
+
 pprTypeTemplate
   :: TypeTemplate -> String
 pprTypeTemplate
-  = pprTerm pprTyCon pprTyVar
+  = pprTerm pprTypeNode pprTyVar
 
 pprTypeTerm
   :: TypeTerm -> String
 pprTypeTerm
-  = pprTerm pprTyCon pprTypeEq
+  = pprTerm pprTypeNode pprTypeEq
 
 pprTypeRule
   :: TypeRule -> String
 pprTypeRule
-  = pprRule pprTyCon pprTyVar
+  = pprRule pprTypeNode pprTyVar
 
 pprTypeReduct
   :: Reduct TyCon TypeEq TyVar -> String

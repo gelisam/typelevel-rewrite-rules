@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a0aa0b58de9c55fa77a152d9a3aa0be871bfa33439ebe19185cb1283b97d6350
+-- hash: 9e23fab255baf5c4020e860dbbee8ad76873d9de98a798027f35bd37dafe8cbe
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -33,7 +33,9 @@ library
       TypeLevel.Rewrite.Internal.PrettyPrint
       TypeLevel.Rewrite.Internal.Term
       TypeLevel.Rewrite.Internal.TypeEq
+      TypeLevel.Rewrite.Internal.TypeNode
       TypeLevel.Rewrite.Internal.TypeRule
+      TypeLevel.Rewrite.Internal.TypeSubst
       TypeLevel.Rewrite.Internal.TypeTemplate
       TypeLevel.Rewrite.Internal.TypeTerm
   other-modules:
@@ -42,8 +44,8 @@ library
       src
   ghc-options: -W -Wall
   build-depends:
-      base >=4.12 && <6
-    , ghc >=8.6.3
+      base >=4.12 && <5
+    , ghc >=8.6.3 && <8.10
     , ghc-prim >=0.5.3
     , ghc-tcplugins-extra >=0.3
     , term-rewriting >=0.3.0.1
@@ -56,6 +58,8 @@ test-suite should-compile
   other-modules:
       Data.Vinyl.TypeLevel.RewriteRules
       Data.Vinyl.TypeLevel.Test
+      GHC.TypeLits.RewriteRules
+      GHC.TypeLits.Test
       MonoKinds.Append
       MonoKinds.Test
       SamePackage.Append
@@ -65,7 +69,7 @@ test-suite should-compile
   hs-source-dirs:
       test/should-compile
   build-depends:
-      base >=4.12 && <6
+      base >=4.12 && <5
     , ghc-prim >=0.5.3
     , typelevel-rewrite-rules
     , vinyl
