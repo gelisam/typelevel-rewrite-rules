@@ -3,7 +3,7 @@ module TypeLevel.Rewrite.Internal.TypeNode where
 
 -- GHC API
 import TyCon (TyCon)
-import Type (Type, isNumLitTy, splitTyConApp_maybe)
+import Type (Type, isNumLitTy, isStrLitTy, splitTyConApp_maybe)
 
 import TypeLevel.Rewrite.Internal.TypeEq
 
@@ -21,6 +21,8 @@ toTypeNodeApp_maybe
 toTypeNodeApp_maybe (splitTyConApp_maybe -> Just (tyCon, args))
   = pure (TyCon tyCon, args)
 toTypeNodeApp_maybe tyLit@(isNumLitTy -> Just _)
+  = pure (TyLit (TypeEq tyLit), [])
+toTypeNodeApp_maybe tyLit@(isStrLitTy -> Just _)
   = pure (TyLit (TypeEq tyLit), [])
 toTypeNodeApp_maybe _
   = Nothing
