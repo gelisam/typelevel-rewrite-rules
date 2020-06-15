@@ -12,13 +12,14 @@ extra-source-files:
 - README.md
 - CHANGELOG.md
 
+ghc-options: -W -Wall -dcore-lint
+
 dependencies:
   - base >= 4.12 && < 5
   - ghc-prim >= 0.5.3
 
 library:
   source-dirs:      src
-  ghc-options: -W -Wall
   dependencies:
     - ghc >= 8.6.3 && <8.10
     - ghc-tcplugins-extra >= 0.3
