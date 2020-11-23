@@ -13,6 +13,7 @@ Solve type equalities using custom type-level rewrite rules like `(n + 'Z) ~ n` 
   + [ghc-typelits-natnormalise](#ghc-typelits-natnormalise)
   + [Thoralf](#thoralf)
   + [LiquidHaskell](#liquidhaskell)
+  + [Ghosts of Departed Proofs](#ghosts-of-departed-proofs)
 
 
 ## The problem
@@ -183,16 +184,17 @@ That error message is misleadingly followed by `Probable cause: bug in .hi-boot 
 
 Remember, this typechecker plugin is dangerous! Have you considered these other, safer alternatives?
 
-| Approach                                                | Effort                                                     | Limitations             | Safety concerns                         |
-|---------------------------------------------------------|------------------------------------------------------------|-------------------------|-----------------------------------------|
-| [typelevel-rewrite-rules](#readme)                      | state rewrite rules                                        | no commutativity        | :construction: invalid rules, loops     |
-| [Propagate the constraints](#propagate-the-constraints) |                                                            | no recursion            |                                         |
-| [Hasochism](#hasochism)                                 | singletons boilerplate, prove properties, apply properties |                         |                                         |
-| [Axiom](#axiom) (at the call sites)                     | copy-paste equation                                        |                         | :bomb: invalid rules more likely        |
-| [Axiom](#axiom) (when defining properties)              | state properties, apply properties                         |                         | :construction: invalid rules            |
-| [ghc-typelits-natnormalise](#ghc-typelits-natnormalise) |                                                            | `GHC.TypeLits.Nat` only |                                         |
-| [Thoralf](#thoralf)                                     | convert types and functions to Z3                          |                         | :construction: invalid conversion       |
-| [LiquidHaskell](#liquidhaskell)                         | state refined types                                        | builtin types only      | :construction: invalid `assume` pragmas |
+| Approach                                                | Effort                                                         | Limitations             | Safety concerns                         |
+|---------------------------------------------------------|----------------------------------------------------------------|-------------------------|-----------------------------------------|
+| [typelevel-rewrite-rules](#readme)                      | state rewrite rules                                            | no commutativity        | :construction: invalid rules, loops     |
+| [Propagate the constraints](#propagate-the-constraints) |                                                                | no recursion            |                                         |
+| [Hasochism](#hasochism)                                 | singletons boilerplate, prove properties, apply properties     |                         |                                         |
+| [Axiom](#axiom) (at the call sites)                     | copy-paste equation                                            |                         | :bomb: invalid rules more likely        |
+| [Axiom](#axiom) (when defining properties)              | state properties, apply properties                             |                         | :construction: invalid rules            |
+| [ghc-typelits-natnormalise](#ghc-typelits-natnormalise) |                                                                | `GHC.TypeLits.Nat` only |                                         |
+| [Thoralf](#thoralf)                                     | convert types and functions to Z3                              |                         | :construction: invalid conversion       |
+| [LiquidHaskell](#liquidhaskell)                         | state refined types                                            | builtin types only      | :construction: invalid `assume` pragmas |
+| [Ghosts of Departed Proofs](#ghosts-of-departed-proofs) | Argument boilerplate, state/prove properties, apply properties |                         | :construction: invalid `axiom` uses     |
 
 
 ### Propagate the constraints
@@ -699,3 +701,163 @@ Once again, LiquidHaskell knows that `(+)` is associative and commutative, so we
 The main disadvantage of this approach is the same as with ghc-typelits-natnormalise: we cannot reuse the existing `Vec` from `Data.Vec.Lazy` nor the existing `Nat` from `Data.Type.Nat`, we have to define a separate type inside LiquidHaskell's framework. There are several reasons for this. First, as I've just explained, we are limited to the types which LiquidHaskell already knows about, and `Nat` is not on that list. Second, `Vec` is a GADT which uses a `Nat` as a type index, but LiquidHaskell uses refinement types, not GADTs. Finally, LiquidHaskell's refinement types are stricter than the Haskell types it refines, and so LiquidHaskell provides more type safety by rejecting more programs. By contrast, our original `Vec`-based program was already rejected by ghc's regular type checker, and so in order to reuse `Vec`, we need an approach which rejects fewer programs, by discharging some constraints.
 
 In the example above, while we were not able to reuse `Vec`, we were able to use lists, a much more ubiquitous type than `Vec` for which many more functions already exist. In fact, `appendSingletons = foldl' (++)`! Unfortunately, we cannot use that simpler definition, because LiquidHaskell needs to observe the recursive call in order to confirm that `appendSingletons` does have the refined type we stated. 
+
+
+### Ghosts of Departed Proofs
+
+The [Ghosts of Departed Proofs](https://hackage.haskell.org/package/gdp) library supports a variety of styles, including refined types like LiquidHaskell, computer-checked proofs like Hasochism, and using typechecker plugins and "trust me" axioms to avoid having to write those proofs. However, its most distiguishing style involves giving names to arguments and functions, like this:
+
+```haskell
+{-# LANGUAGE TypeOperators #-}
+
+import GDP
+
+newtype Zero = Zero Defn
+newtype One = One Defn
+newtype Plus m n = Plus Defn
+newtype Nil = Nil Defn
+newtype Cons x xs = Cons Defn
+newtype Len xs = Len Defn
+newtype Append xs ys = Append Defn
+
+zero :: Int ~~ Zero
+zero = defn 0
+
+one :: Int ~~ One
+one = defn 1
+
+plus :: (Int ~~ m)
+     -> (Int ~~ n)
+     -> (Int ~~ Plus m n)
+plus m n = defn (the m + the n)
+
+nil :: [a] ~~ Nil
+nil = defn []
+
+cons :: (a ~~ x)
+     -> ([a] ~~ xs)
+     -> ([a] ~~ Cons x xs)
+cons x xs = defn (the x : the xs)
+
+len :: ([a] ~~ xs)
+    -> (Int ~~ Len xs)
+len xs = defn $ length (the xs)
+
+append :: ([a] ~~ xs)
+       -> ([a] ~~ ys)
+       -> ([a] ~~ Append xs ys)
+append xs ys = defn (the xs ++ the ys)
+```
+
+The type signature says that given two lists named `xs` and `ys, we can construct a list named `Append xs ys`. The only way to obtain a value with that name is to call `append`.
+
+We can now use those names to express some properties which we assert to be true about those functions:
+
+```haskell
+instance Associative Plus
+instance Commutative Plus
+
+zeroPlus :: Proof (Plus Zero n == n)
+zeroPlus = axiom
+
+plusZero :: Proof (Plus n Zero == n)
+plusZero = axiom
+
+instance Associative Append
+instance Commutative Append
+
+lenNil :: Proof (Len Nil == Zero)
+lenNil = axiom
+
+lenCons :: Proof (Len (Cons x xs) == Plus One (Len xs))
+lenCons = axiom
+
+lenAppend :: Proof (Len (Append xs ys) == Plus (Len xs) (Len ys))
+lenAppend = axiom
+```
+
+Using those properties, we can in turn write some proofs showing that some other properties are a consequence of the asserted properties.
+
+```haskell
+simplifyZNZ :: Proof (Zero `Plus` n `Plus` Zero == n)
+simplifyZNZ
+    = -- (Zero `Plus` n) `Plus` Zero
+      plusZero
+  ==. -- Zero `Plus` n
+      zeroPlus
+      -- n
+```
+
+In the proof above, I was lucky that each equality proof applied to the entire name, so I could simply concatenate a few existing proofs. A more common use case is to apply an equality proof to a portion of the name, in which case we need to specify which portion we have in mind. In order to do that, we need to write a bit of boilerplate in order to identity the various arguments to each function name.
+
+```haskell
+{-# LANGUAGE DataKinds, MultiParamTypeClasses, TypeFamilies #-}
+
+instance Argument (Plus m n) 0 where
+  type GetArg (Plus m n) 0    = m
+  type SetArg (Plus m n) 0 m' = Plus m' n
+
+instance Argument (Plus m n) 1 where
+  type GetArg (Plus m n) 1    = n
+  type SetArg (Plus m n) 1 n' = Plus m n'
+
+instance Argument (Cons x xs) 0 where
+  type GetArg (Cons x xs) 0    = x
+  type SetArg (Cons x xs) 0 x' = Cons x' xs
+
+instance Argument (Cons x xs) 1 where
+  type GetArg (Cons x xs) 1     = xs
+  type SetArg (Cons x xs) 1 xs' = Cons x xs'
+
+instance Argument (Len xs) 0 where
+  type GetArg (Len xs) 0     = xs
+  type SetArg (Len xs) 0 xs' = Len xs'
+
+instance Argument (Append xs ys) 0 where
+  type GetArg (Append xs ys) 0     = xs
+  type SetArg (Append xs ys) 0 xs' = Append xs' ys
+
+instance Argument (Append xs ys) 1 where
+  type GetArg (Append xs ys) 1     = xs
+  type SetArg (Append xs ys) 1 ys' = Append xs ys'
+```
+
+We can now use those to `apply` an equality proof to a portion of a name.
+
+```haskell
+{-# LANGUAGE TypeApplications #-}
+
+simplifyMZNZO :: Proof ( (m `Plus` Zero `Plus` n `Plus` Zero `Plus` o)
+                      == (m `Plus` n `Plus` o)
+                       )
+simplifyMZNZO
+    = -- (((m `Plus` Zero) `Plus` n) `Plus` Zero) `Plus` o
+      ( apply (arg @0)
+      $ plusZero
+      )
+  ==. -- ((m `Plus` Zero) `Plus` n) `Plus` o
+      ( apply (arg @0)
+      $ apply (arg @0)
+      $ plusZero
+      )
+      -- (m `Plus` n) `Plus` o
+```
+
+Proofs with GDT can be more tedious than with Hasochism, for two reasons. First, with Hasochism, `(+)` can be a type family, and so we don't need to explicitly simplify `'Z + n` to `n` because the former automatically computes to the latter. Second, Hasochism uses the builtin `~` type equalities, which the typechecker uses when comparing types at any depth, and so it is not necessary to specify where we want to `apply` each equality proof.
+
+On the flip side, the fact that GDP uses its own equality type `Proof (x == y)` instead of the builtin `~` allows GDP to represent properties other than equalities:
+
+```haskell
+data NonEmpty xs
+
+consNonEmpty :: Proof (NonEmpty (Cons x xs))
+consNonEmpty = axiom
+
+nonEmptyAppend :: Proof (NonEmpty xs)
+               -> Proof (NonEmpty (Append xs ys))
+nonEmptyAppend _ = axiom
+
+appendNonEmpty :: Proof (NonEmpty ys)
+               -> Proof (NonEmpty (Append xs ys))
+appendNonEmpty _ = axiom
+```
