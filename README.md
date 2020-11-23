@@ -713,40 +713,15 @@ The [Ghosts of Departed Proofs](https://hackage.haskell.org/package/gdp) library
 import GDP
 
 newtype Zero = Zero Defn
-newtype One = One Defn
 newtype Plus m n = Plus Defn
-newtype Nil = Nil Defn
-newtype Cons x xs = Cons Defn
-newtype Len xs = Len Defn
-newtype Append xs ys = Append Defn
 
 zero :: Int ~~ Zero
 zero = defn 0
-
-one :: Int ~~ One
-one = defn 1
 
 plus :: (Int ~~ m)
      -> (Int ~~ n)
      -> (Int ~~ Plus m n)
 plus m n = defn (the m + the n)
-
-nil :: [a] ~~ Nil
-nil = defn []
-
-cons :: (a ~~ x)
-     -> ([a] ~~ xs)
-     -> ([a] ~~ Cons x xs)
-cons x xs = defn (the x : the xs)
-
-len :: ([a] ~~ xs)
-    -> (Int ~~ Len xs)
-len xs = defn $ length (the xs)
-
-append :: ([a] ~~ xs)
-       -> ([a] ~~ ys)
-       -> ([a] ~~ Append xs ys)
-append xs ys = defn (the xs ++ the ys)
 ```
 
 The type signature says that given two lists named `xs` and `ys`, we can construct a list named `Append xs ys`. The only way to obtain a value with that name is to call `append`.
@@ -762,18 +737,6 @@ zeroPlus = axiom
 
 plusZero :: Proof (Plus n Zero == n)
 plusZero = axiom
-
-instance Associative Append
-instance Commutative Append
-
-lenNil :: Proof (Len Nil == Zero)
-lenNil = axiom
-
-lenCons :: Proof (Len (Cons x xs) == Plus One (Len xs))
-lenCons = axiom
-
-lenAppend :: Proof (Len (Append xs ys) == Plus (Len xs) (Len ys))
-lenAppend = axiom
 ```
 
 Using those properties, we can in turn write some proofs showing that some other properties are a consequence of the asserted properties.
@@ -800,26 +763,6 @@ instance Argument (Plus m n) 0 where
 instance Argument (Plus m n) 1 where
   type GetArg (Plus m n) 1    = n
   type SetArg (Plus m n) 1 n' = Plus m n'
-
-instance Argument (Cons x xs) 0 where
-  type GetArg (Cons x xs) 0    = x
-  type SetArg (Cons x xs) 0 x' = Cons x' xs
-
-instance Argument (Cons x xs) 1 where
-  type GetArg (Cons x xs) 1     = xs
-  type SetArg (Cons x xs) 1 xs' = Cons x xs'
-
-instance Argument (Len xs) 0 where
-  type GetArg (Len xs) 0     = xs
-  type SetArg (Len xs) 0 xs' = Len xs'
-
-instance Argument (Append xs ys) 0 where
-  type GetArg (Append xs ys) 0     = xs
-  type SetArg (Append xs ys) 0 xs' = Append xs' ys
-
-instance Argument (Append xs ys) 1 where
-  type GetArg (Append xs ys) 1     = xs
-  type SetArg (Append xs ys) 1 ys' = Append xs ys'
 ```
 
 We can now use those to `apply` an equality proof to a portion of a name.
@@ -848,16 +791,10 @@ Proofs with GDT can be more tedious than with Hasochism, for two reasons. First,
 On the flip side, the fact that GDP uses its own equality type `Proof (x == y)` instead of the builtin `~` allows GDP to represent properties other than equalities:
 
 ```haskell
-data NonEmpty xs
+data Positive xs
 
-consNonEmpty :: Proof (NonEmpty (Cons x xs))
-consNonEmpty = axiom
-
-nonEmptyAppend :: Proof (NonEmpty xs)
-               -> Proof (NonEmpty (Append xs ys))
-nonEmptyAppend _ = axiom
-
-appendNonEmpty :: Proof (NonEmpty ys)
-               -> Proof (NonEmpty (Append xs ys))
-appendNonEmpty _ = axiom
+positivePlusPositive :: Proof (Positive m)
+                     -> Proof (Positive n)
+                     -> Proof (Positive (Plus m n))
+positivePlusPositive _ _ = axiom
 ```
