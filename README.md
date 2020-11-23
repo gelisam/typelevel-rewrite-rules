@@ -811,7 +811,7 @@ divide1 :: Int
 But it is more common to associate a proof with the value it describes, like this:
 
 ```haskell
-divide1 :: Int
+divide2 :: Int
         -> (Int ~~ denominator ::: Positive denominator)
         -> Int
 ```
