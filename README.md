@@ -705,7 +705,7 @@ In the example above, while we were not able to reuse `Vec`, we were able to use
 
 ### Ghosts of Departed Proofs
 
-The [Ghosts of Departed Proofs](https://hackage.haskell.org/package/gdp) library supports a variety of styles, including refined types like LiquidHaskell, computer-checked proofs like Hasochism, and using typechecker plugins and "trust me" axioms to avoid having to write those proofs. However, its most distiguishing style involves giving names to arguments and functions, like this:
+The [Ghosts of Departed Proofs](https://hackage.haskell.org/package/gdp) library supports a variety of styles, including refined types like LiquidHaskell, computer-checked proofs like Hasochism, and using typechecker plugins and "trust me" axioms to avoid having to write those proofs. However, its signature style involves giving names to arguments and functions, like this:
 
 ```haskell
 {-# LANGUAGE TypeOperators #-}
