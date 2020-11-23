@@ -788,7 +788,7 @@ simplifyMZNZO
 
 Proofs with GDT can be more tedious than with Hasochism, for two reasons. First, with Hasochism, `(+)` can be a type family, and so we don't need to explicitly simplify `'Z + n` to `n` because the former automatically computes to the latter. Second, Hasochism uses the builtin `~` type equalities, which the typechecker uses when comparing types at any depth, and so it is not necessary to specify where we want to `apply` each equality proof.
 
-On the flip side, the fact that GDP uses its own equality type `Proof (x == y)` instead of the builtin `~` allows GDP to represent properties other than equalities:
+On the flip side, the fact that GDP uses its own equality type `Proof (x == y)` instead of the builtin `~` allows GDP to represent properties other than equalities.
 
 ```haskell
 data Positive xs
@@ -798,3 +798,22 @@ positivePlusPositive :: Proof (Positive m)
                      -> Proof (Positive (Plus m n))
 positivePlusPositive _ _ = axiom
 ```
+
+A function may ask for a `Proof` value in order to guarantee that some property holds about its arguments.
+
+```haskell
+divide1 :: Int
+        -> (Int ~~ denominator)
+        -> Proof (Positive denominator)
+        -> Int
+```
+
+But it is more common to associate a proof with the value it describes, like this:
+
+```haskell
+divide1 :: Int
+        -> (Int ~~ denominator ::: Positive denominator)
+        -> Int
+```
+
+That type asks for an `Int` named `denominator` such that `Positive denominator` holds. GDP also offers the refinement-type syntax `Int ? Positive` for this common case in which the proof is a proposition applied to the name and that name does not occur anywhere else in the type signature.
