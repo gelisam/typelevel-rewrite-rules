@@ -751,7 +751,7 @@ simplifyZNZ
       -- n
 ```
 
-In the proof above, I was lucky that each equality proof applied to the entire name, so I could simply concatenate a few existing proofs. A more common use case is to apply an equality proof to a portion of the name, in which case we need to specify which portion we have in mind. In order to do that, we need to write a bit of boilerplate in order to identity the various arguments to each function name.
+In the proof above, I was lucky that each equality proof applied to the entire name, so I could simply concatenate a few existing proofs. A more common use case is to apply an equality proof to a portion of the name, in which case we need to specify which portion we have in mind. In order to do that, we need to write a bit of boilerplate in order to identify the various arguments to each function name.
 
 ```haskell
 {-# LANGUAGE DataKinds, MultiParamTypeClasses, TypeFamilies #-}
