@@ -749,7 +749,7 @@ append :: ([a] ~~ xs)
 append xs ys = defn (the xs ++ the ys)
 ```
 
-The type signature says that given two lists named `xs` and `ys, we can construct a list named `Append xs ys`. The only way to obtain a value with that name is to call `append`.
+The type signature says that given two lists named `xs` and `ys`, we can construct a list named `Append xs ys`. The only way to obtain a value with that name is to call `append`.
 
 We can now use those names to express some properties which we assert to be true about those functions:
 
