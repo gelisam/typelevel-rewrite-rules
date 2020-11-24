@@ -724,7 +724,7 @@ plus :: (Int ~~ m)
 plus m n = defn (the m + the n)
 ```
 
-The type signature says that given two numbers named `m` and `n`, we can construct a list named `Plus m n`. The only way to obtain a value with that name is to call `plus`.
+The type signature says that given two numbers named `m` and `n`, we can construct a number named `Plus m n`. The only way to obtain a value with that name is to call `plus`.
 
 We can now use those names to express some properties which we assert to be true about those functions:
 
