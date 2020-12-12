@@ -58,7 +58,6 @@ jobs:
     # This test is separate because it cannot run inside stack test.
     # It's pointless to run it more than once because its lts is hardcoded.
     - name: Test Error Messages
-      if: matrix.name == 'stable'
       run: |
         ./test/error-messages/Test.hs
 
