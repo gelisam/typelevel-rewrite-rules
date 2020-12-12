@@ -20,10 +20,10 @@ library:
   source-dirs:      src
   ghc-options: -W -Wall
   dependencies:
-    - ghc >= 8.6.3 && <8.12
-    - ghc-tcplugins-extra >= 0.3
+    - ghc >= 8.10.2
+    - ghc-tcplugins-extra >= 0.4
     - term-rewriting >= 0.3.0.1
-    - transformers >= 0.5.5.0
+    - transformers >= 0.5.6.2
 
 tests:
   should-compile:
@@ -31,7 +31,7 @@ tests:
     main: Test.hs
     dependencies:
       - typelevel-rewrite-rules
-      - vinyl
+      - vinyl >= 0.13.0
 
   # can't run "stack test error-messages", it locks a file which prevents the
   # test from running stack on its test packages.
