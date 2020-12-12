@@ -51,4 +51,4 @@ jobs:
     - name: Test Error Messages
       if: matrix.name == 'stable'
       run: |
-        stack --system-ghc ./test/error-messages/Test.hs
+        stack ./test/error-messages/Test.hs
