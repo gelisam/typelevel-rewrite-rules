@@ -22,6 +22,7 @@ jobs:
           # Check that the build passes with the recommended snapshot.
           - name: stable
             stack_yaml: "stack.yaml"
+            ghc: "8.8.4"
             os: ubuntu-latest
 
     steps:
