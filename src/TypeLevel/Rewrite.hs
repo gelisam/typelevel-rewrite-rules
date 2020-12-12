@@ -9,13 +9,19 @@ import Data.Traversable
 import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
+import Constraint
+  ( CtEvidence(CtWanted), ShadowInfo(WDeriv), TcEvDest(HoleDest), Ct, CtLoc, ctEvPred, ctEvidence
+  , ctLoc, mkNonCanonical
+  )
+import GHC (Type)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
+import Predicate (EqRel(NomEq), mkPrimEqPred)
 import TcEvidence (EvTerm)
-import TcPluginM (TcPluginM, newCoercionHole)
+import TcPluginM (newCoercionHole)
 import TcRnTypes
 import TcType (TcPredType)
 import TyCon (synTyConDefn_maybe)
-import Type (EqRel(NomEq), PredTree(EqPred), Type, classifyPredType, mkPrimEqPred)
+import Predicate (Pred(EqPred), classifyPredType)
 
 import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint

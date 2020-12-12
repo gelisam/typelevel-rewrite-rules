@@ -3,20 +3,18 @@ module TypeLevel.Rewrite.Internal.Lookup where
 
 import Control.Arrow ((***), first)
 import Data.Tuple (swap)
-import qualified GHC.TcPluginM.Extra as TcPluginM
 
 -- GHC API
-import DataCon (DataCon, promoteDataCon)
-import DynFlags (getDynFlags)
 import Finder (cannotFindModule)
+import GHC (DataCon, TyCon, dataConTyCon)
 import Module (Module, ModuleName, mkModuleName)
 import OccName (mkDataOcc, mkTcOcc)
 import Panic (panicDoc)
 import TcPluginM
-  ( FindResult(Found), TcPluginM, findImportedModule, tcLookupDataCon, tcLookupTyCon
+  ( FindResult(Found), TcPluginM, findImportedModule, lookupOrig, tcLookupDataCon, tcLookupTyCon
   , unsafeTcPluginTcM
   )
-import TyCon (TyCon)
+import TcSMonad (getDynFlags)
 
 
 lookupModule
@@ -50,7 +48,7 @@ lookupTyCon
   -> TcPluginM TyCon
 lookupTyCon moduleNameStr tyConNameStr = do
   module_ <- lookupModule moduleNameStr
-  tyConName <- TcPluginM.lookupName module_ (mkTcOcc tyConNameStr)
+  tyConName <- lookupOrig module_ (mkTcOcc tyConNameStr)
   tyCon <- tcLookupTyCon tyConName
   pure tyCon
 
@@ -60,7 +58,7 @@ lookupDataCon
   -> TcPluginM DataCon
 lookupDataCon moduleNameStr dataConNameStr = do
   module_ <- lookupModule moduleNameStr
-  dataConName <- TcPluginM.lookupName module_ (mkDataOcc dataConNameStr)
+  dataConName <- lookupOrig module_ (mkDataOcc dataConNameStr)
   dataCon <- tcLookupDataCon dataConName
   pure dataCon
 
@@ -87,7 +85,7 @@ lookupFQN
   :: String
   -> TcPluginM TyCon
 lookupFQN ('\'' : (splitLastDot -> Just (moduleNameStr, dataConNameStr)))
-  = promoteDataCon <$> lookupDataCon moduleNameStr dataConNameStr
+  = dataConTyCon <$> lookupDataCon moduleNameStr dataConNameStr
 lookupFQN (splitLastDot -> Just (moduleNameStr, tyConNameStr))
   = lookupTyCon moduleNameStr tyConNameStr
 lookupFQN fqn

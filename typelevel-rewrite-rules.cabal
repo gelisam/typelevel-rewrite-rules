@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9e23fab255baf5c4020e860dbbee8ad76873d9de98a798027f35bd37dafe8cbe
+-- hash: 1ebafef503490e61f477a0cf9011a2e26330ee653700e0c10131f6e82f4d8c70
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -45,7 +45,7 @@ library
   ghc-options: -W -Wall
   build-depends:
       base >=4.12 && <5
-    , ghc >=8.6.3 && <8.10
+    , ghc >=8.6.3 && <8.12
     , ghc-prim >=0.5.3
     , ghc-tcplugins-extra >=0.3
     , term-rewriting >=0.3.0.1

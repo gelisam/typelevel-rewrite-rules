@@ -20,7 +20,7 @@ library:
   source-dirs:      src
   ghc-options: -W -Wall
   dependencies:
-    - ghc >= 8.6.3 && <8.10
+    - ghc >= 8.6.3 && <8.12
     - ghc-tcplugins-extra >= 0.3
     - term-rewriting >= 0.3.0.1
     - transformers >= 0.5.5.0
