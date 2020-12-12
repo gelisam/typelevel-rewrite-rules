@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 64b81baf33f5409dcf13bf480067a8c5908189b09ba059fcb2301993f87f871e
+-- hash: 4ee30ee2609a9ce27a24d1aad02b6f6f59c78c58a0bd2eda2190c508fb122aa2
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -72,5 +72,5 @@ test-suite should-compile
       base >=4.12 && <5
     , ghc-prim >=0.5.3
     , typelevel-rewrite-rules
-    , vinyl
+    , vinyl >=0.13.0
   default-language: Haskell2010
