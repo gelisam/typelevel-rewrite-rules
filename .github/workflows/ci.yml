@@ -35,7 +35,7 @@ jobs:
         path: |
           ~/.stack
           .stack-work
-        key: ${{ runner.os }}-stack-${{ hashFiles(matrix.stack_yaml) }}
+        key: ${{ runner.os }}-stack2-${{ hashFiles(matrix.stack_yaml) }}
 
     - uses: actions/setup-haskell@v1
       id: setup-haskell-stack
