@@ -42,8 +42,6 @@ jobs:
       name: Setup Stack
       with:
         enable-stack: true
-        stack-setup-ghc: true
-        stack-no-global: true
         ghc-version: ${{ matrix.ghc }}
 
     # This test is separate because it cannot run inside stack test.
