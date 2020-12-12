@@ -2,7 +2,7 @@ module TypeLevel.Rewrite.Internal.TypeEq where
 
 import Data.Function
 
-import Type (Type, eqType)
+import GhcPlugins (Type, eqType)
 
 
 -- | A newtype around 'Type' which has an 'Eq' instance.

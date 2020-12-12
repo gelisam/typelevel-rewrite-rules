@@ -1,6 +1,6 @@
 #!/usr/bin/env stack
--- stack --resolver lts-14.19 script
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables, TemplateHaskell #-}
+-- stack --resolver nightly-2020-12-10 script
+{-# LANGUAGE OverloadedStrings, PackageImports, ScopedTypeVariables, TemplateHaskell #-}
 
 import Control.Concurrent.STM (STM)
 import Control.Lens ((&), (.~))
@@ -11,7 +11,7 @@ import System.Exit (ExitCode(ExitFailure, ExitSuccess))
 import System.FilePath ((</>))
 import System.Process.Typed (ProcessConfig)
 import qualified Control.Concurrent.STM as STM
-import qualified Data.Aeson.Lens as Yaml
+import qualified "lens-aeson" Data.Aeson.Lens as Yaml
 import qualified Data.ByteString.Lazy.Char8 as ByteString
 import qualified Data.List as List
 import qualified Data.Maybe as List (mapMaybe)
