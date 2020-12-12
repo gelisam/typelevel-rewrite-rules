@@ -51,4 +51,4 @@ jobs:
     - name: Test Error Messages
       if: matrix.name == 'stable'
       run: |
-        stack ./test/error-messages/Test.hs
+        ./test/error-messages/Test.hs
