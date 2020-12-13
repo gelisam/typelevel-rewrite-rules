@@ -13,7 +13,7 @@ build-depends: base
              , typed-process
              , yaml
 -}
-{-# LANGUAGE OverloadedStrings, PackageImports, ScopedTypeVariables, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables, TemplateHaskell #-}
 
 import Control.Concurrent.STM (STM)
 import Control.Lens ((&), (.~))
@@ -24,7 +24,7 @@ import System.Exit (ExitCode(ExitFailure, ExitSuccess))
 import System.FilePath ((</>))
 import System.Process.Typed (ProcessConfig)
 import qualified Control.Concurrent.STM as STM
-import qualified "lens-aeson" Data.Aeson.Lens as Yaml
+import qualified Data.Aeson.Lens as Yaml
 import qualified Data.ByteString.Lazy.Char8 as ByteString
 import qualified Data.List as List
 import qualified Data.Maybe as List (mapMaybe)
