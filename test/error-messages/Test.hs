@@ -7,19 +7,18 @@ build-depends: base
              , lens
              , lens-aeson
              , stm
-             , template-haskell
              , text
-             , th-utilities
              , typed-process
              , yaml
 -}
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables, TemplateHaskell #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings, ScopedTypeVariables #-}
 
 import Control.Concurrent.STM (STM)
 import Control.Lens ((&), (.~))
 import Data.ByteString.Lazy (ByteString)
 import Data.Text.Lazy (Text)
 import Data.Foldable (for_)
+import System.Environment (getArgs, getProgName)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess))
 import System.FilePath ((</>))
 import System.Process.Typed (ProcessConfig)
@@ -32,108 +31,118 @@ import qualified Data.Text.Lazy as Text
 import qualified Data.Text.Lazy.Encoding as Text
 import qualified Data.Text.Lazy.IO as Text
 import qualified Data.Yaml as Yaml
-import qualified Language.Haskell.TH.Syntax as TH
 import qualified System.Directory as FilePath
 import qualified System.Process.Typed as Process
-import qualified TH.RelativePaths as TH
 
 
 main
   :: IO ()
 main = do
-  -- "/.../stack.yaml"
-  let stackYamlPath :: FilePath
-      stackYamlPath = $(TH.lift =<< TH.pathRelativeToCabalPackage "stack.yaml")
+  getArgs >>= \case
+    [arg] | not (arg `elem` ["-h", "--help"]) -> do
+      -- "/..." (root of the repo)
+      let rootPath :: FilePath
+          rootPath = arg
 
-  -- {
-  --   resolver: ...,
-  --   packages: ["."],
-  --   extra-deps: [...],
-  -- }
-  stackYaml <- either (error . Yaml.prettyPrintParseException) id
-           <$> Yaml.decodeFileEither stackYamlPath
+      -- "/.../stack.yaml"
+      let stackYamlPath :: FilePath
+          stackYamlPath = rootPath </> "stack.yaml"
 
-  -- "/.../test/error-messages-cases"
-  let casesDir :: FilePath
-      casesDir = $(TH.lift =<< TH.pathRelativeToCabalPackage "test/error-messages-cases")
+      -- {
+      --   resolver: ...,
+      --   packages: ["."],
+      --   extra-deps: [...],
+      -- }
+      stackYaml <- either (error . Yaml.prettyPrintParseException) id
+               <$> Yaml.decodeFileEither stackYamlPath
 
-  -- ["malformed-argument", ...]
-  caseSubdirs <- FilePath.listDirectory casesDir
+      -- "/.../test/error-messages-cases"
+      let casesDir :: FilePath
+          casesDir = rootPath </> "test/error-messages-cases"
 
-  for_ caseSubdirs $ \caseSubdir -> do
-    -- "malformed-argument"
-    let caseName :: Text
-        caseName = Text.pack caseSubdir
+      -- ["malformed-argument", ...]
+      caseSubdirs <- FilePath.listDirectory casesDir
 
-    -- "/.../test/error-messages-cases/malformed-argument"
-    let workingDir :: FilePath
-        workingDir = casesDir </> caseSubdir
+      for_ caseSubdirs $ \caseSubdir -> do
+        -- "malformed-argument"
+        let caseName :: Text
+            caseName = Text.pack caseSubdir
 
-    -- "/.../test/error-messages-cases/malformed-argument/stack.yaml"
-    let stackYamlPath' :: FilePath
-        stackYamlPath' = workingDir </> "stack.yaml"
+        -- "/.../test/error-messages-cases/malformed-argument"
+        let workingDir :: FilePath
+            workingDir = casesDir </> caseSubdir
 
-    -- {
-    --   resolver: ...,
-    --   packages: ["../../..", "."],
-    --   extra-deps: [...],
-    -- }
-    let stackYaml' :: Yaml.Value
-        stackYaml' = stackYaml & Yaml.key "packages" .~ Yaml.toJSON ["../../..", "." :: String]
-    Yaml.encodeFile stackYamlPath' stackYaml'
+        -- "/.../test/error-messages-cases/malformed-argument/stack.yaml"
+        let stackYamlPath' :: FilePath
+            stackYamlPath' = workingDir </> "stack.yaml"
 
-    -- stack --stack-yaml "/.../test/error-messages-cases/malformed-argument/stack.yaml" build
-    let processConfig :: ProcessConfig () () ()
-        processConfig = Process.proc "stack" ["--stack-yaml", stackYamlPath', "build"]
-                      & Process.setWorkingDir workingDir
+        -- {
+        --   resolver: ...,
+        --   packages: ["../../..", "."],
+        --   extra-deps: [...],
+        -- }
+        let stackYaml' :: Yaml.Value
+            stackYaml' = stackYaml & Yaml.key "packages" .~ Yaml.toJSON ["../../..", "." :: String]
+        Yaml.encodeFile stackYamlPath' stackYaml'
 
-    expectedOutput <- Text.readFile (workingDir </> "expected")
-    (exitCode, actualOutputBS) <- Process.readProcessStderr processConfig
-    case exitCode of
-      ExitSuccess -> do
-        error $ Text.unpack
-              $ "expected an error message, but " <> caseName <> " unexpectedly succeeded!"
-      ExitFailure _ -> do
-        let actualOutput :: Text
-            actualOutput = Text.decodeUtf8 actualOutputBS
+        -- stack --stack-yaml "/.../test/error-messages-cases/malformed-argument/stack.yaml" build
+        let processConfig :: ProcessConfig () () ()
+            processConfig = Process.proc "stack" ["--stack-yaml", stackYamlPath', "build"]
+                          & Process.setWorkingDir workingDir
 
-            -- "malformed-argument    > build (lib)" -> Just "build (lib)"
-            stripCasePrefix :: Text -> Maybe Text
-            stripCasePrefix t = do
-              t' <- Text.stripPrefix caseName t
-              let t'' = Text.dropWhile (== ' ') t'
-              Text.stripPrefix "> " t''
+        expectedOutput <- Text.readFile (workingDir </> "expected")
+        (exitCode, actualOutputBS) <- Process.readProcessStderr processConfig
+        case exitCode of
+          ExitSuccess -> do
+            error $ Text.unpack
+                  $ "expected an error message, but " <> caseName <> " unexpectedly succeeded!"
+          ExitFailure _ -> do
+            let actualOutput :: Text
+                actualOutput = Text.decodeUtf8 actualOutputBS
 
-            -- "Progress\b\b\b\b\b\b\b\bfoo" -> "foo"
-            cleanLine :: Text -> Text
-            cleanLine t = if Text.any (== '\b') t
-                          then cleanLine
-                             $ Text.dropWhile (== '\b')
-                             $ Text.dropWhile (/= '\b')
-                             $ t
-                          else t
+                -- "malformed-argument    > build (lib)" -> Just "build (lib)"
+                stripCasePrefix :: Text -> Maybe Text
+                stripCasePrefix t = do
+                  t' <- Text.stripPrefix caseName t
+                  let t'' = Text.dropWhile (== ' ') t'
+                  Text.stripPrefix "> " t''
 
-            actualLines :: [Text]
-            actualLines = List.mapMaybe stripCasePrefix
-                        . fmap cleanLine
-                        . Text.lines
-                        $ actualOutput
+                -- "Progress\b\b\b\b\b\b\b\bfoo" -> "foo"
+                cleanLine :: Text -> Text
+                cleanLine t = if Text.any (== '\b') t
+                              then cleanLine
+                                 $ Text.dropWhile (== '\b')
+                                 $ Text.dropWhile (/= '\b')
+                                 $ t
+                              else t
 
-            expectedLines :: [Text]
-            expectedLines = filter ((== Nothing) . Text.stripPrefix "#")
-                          . Text.lines
-                          $ expectedOutput
+                actualLines :: [Text]
+                actualLines = List.mapMaybe stripCasePrefix
+                            . fmap cleanLine
+                            . Text.lines
+                            $ actualOutput
 
-        if expectedLines `List.isInfixOf` actualLines
-        then do
-          -- malformed-argument test passed
-          Text.putStrLn $ caseName <> " test passed"
-        else do
-          error $ Text.unpack
-                $ caseName <> " test failed\n"
-               <> "expected:\n"
-               <> Text.unlines (map ("  " <>) expectedLines)
-               <> "got:\n"
-               <> Text.unlines (map ("  " <>) $ if List.null actualLines
-                                                then Text.lines actualOutput
-                                                else actualLines)
+                expectedLines :: [Text]
+                expectedLines = filter ((== Nothing) . Text.stripPrefix "#")
+                              . Text.lines
+                              $ expectedOutput
+
+            if expectedLines `List.isInfixOf` actualLines
+            then do
+              -- malformed-argument test passed
+              Text.putStrLn $ caseName <> " test passed"
+            else do
+              error $ Text.unpack
+                    $ caseName <> " test failed\n"
+                   <> "expected:\n"
+                   <> Text.unlines (map ("  " <>) expectedLines)
+                   <> "got:\n"
+                   <> Text.unlines (map ("  " <>) $ if List.null actualLines
+                                                    then Text.lines actualOutput
+                                                    else actualLines)
+    _ -> do
+      putStrLn "usage: "
+      putStrLn $ "  ./test/error-messages/Test.hs `pwd`"
+      putStrLn ""
+      putStrLn "Build a few projects which contain mistakes, and verify that"
+      putStrLn "the error-messages are still nice."
