@@ -48,8 +48,9 @@ jobs:
       id: cache-stack-and-cabal
       name: Cache Stack and Cabal Artifacts
       with:
+        # store the whole ~/.cabal, not just ~/.cabal/store, so we don't have to re-run 'cabal update'.
         path: |
-          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          ~/.cabal
           dist-newstyle
           ~/.stack
           **/.stack-work
