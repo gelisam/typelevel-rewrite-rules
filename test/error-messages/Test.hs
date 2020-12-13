@@ -41,9 +41,6 @@ import qualified TH.RelativePaths as TH
 main
   :: IO ()
 main = do
-  -- prevent "Progress 1/2: typelevel-rewrite-rulesmalformed-argument test passed" issue
-  putStrLn "\n"
-
   -- "/.../stack.yaml"
   let stackYamlPath :: FilePath
       stackYamlPath = $(TH.lift =<< TH.pathRelativeToCabalPackage "stack.yaml")
