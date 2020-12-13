@@ -16,6 +16,7 @@ import Data.Rewriting.Term (Term(Fun, Var))
 import TypeLevel.Rewrite.Internal.TypeEq
 import TypeLevel.Rewrite.Internal.TypeNode
 import TypeLevel.Rewrite.Internal.TypeRule
+import TypeLevel.Rewrite.Internal.TypeSubst
 import TypeLevel.Rewrite.Internal.TypeTemplate
 import TypeLevel.Rewrite.Internal.TypeTerm
 
@@ -31,6 +32,18 @@ pprMaybe pprA = \case
     -> "Just ("
     ++ pprA a
     ++ ")"
+
+pprPair
+  :: (a -> String)
+  -> (b -> String)
+  -> (a, b)
+  -> String
+pprPair pprA pprB (a, b)
+  = "("
+ ++ pprA a
+ ++ ", "
+ ++ pprB b
+ ++ ")"
 
 pprList
   :: (a -> String)
@@ -115,6 +128,11 @@ pprTypeNode = \case
     -> "TyLit ("
     ++ pprTypeEq tyLit
     ++ ")"
+
+pprTypeSubst
+  :: TypeSubst -> String
+pprTypeSubst
+  = pprList $ pprPair pprTypeEq pprTypeTerm
 
 pprTypeTemplate
   :: TypeTemplate -> String
