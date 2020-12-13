@@ -29,13 +29,17 @@ jobs:
       if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/master'
 
     - uses: actions/setup-haskell@v1
+      id: setup-haskell-stack
+      name: Setup Stack
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        enable-stack: true
+
+    - uses: actions/setup-haskell@v1
       id: setup-haskell-cabal
       name: Setup Cabal
       with:
         ghc-version: ${{ matrix.ghc }}
-        # the test needs both stack and cabal, but I can't specify that.
-        # with "enable-stack: true", "cabal update" is missing so that doesn't work.
-        # with "enable-stack: false", stack is somehow still available so that does work!
         enable-stack: false
 
     - uses: actions/cache@v2
