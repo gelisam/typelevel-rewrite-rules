@@ -46,7 +46,7 @@ jobs:
           dist-newstyle
           ~/.stack
           **/.stack-work
-        key: ${{ runner.os }}-{{ matrix.ghx }}-error-messages-${{ hashFiles('stack.yaml') }}
+        key: ${{ runner.os }}-{{ matrix.ghc }}-error-messages-${{ hashFiles('stack.yaml') }}
 
     - name: Test Error Messages
       run: |
