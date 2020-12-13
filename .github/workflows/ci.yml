@@ -28,13 +28,7 @@ jobs:
     - uses: actions/checkout@v2
       if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/master'
 
-    - uses: actions/setup-haskell@v1
-      id: setup-haskell-stack
-      name: Setup Stack
-      with:
-        ghc-version: ${{ matrix.ghc }}
-        enable-stack: true
-
+    # ./test/error-messages/Test.hs is a cabal script, so we need Cabal.
     - uses: actions/setup-haskell@v1
       id: setup-haskell-cabal
       name: Setup Cabal
@@ -42,7 +36,16 @@ jobs:
         ghc-version: ${{ matrix.ghc }}
         enable-stack: false
 
+    # ./test/error-messages/Test.hs runs some stack projects, so we also need stack.
+    - uses: actions/setup-haskell@v1
+      id: setup-haskell-stack
+      name: Setup Stack
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        enable-stack: true
+
     - uses: actions/cache@v2
+      id: cache-stack-and-cabal
       name: Cache Stack and Cabal Artifacts
       with:
         path: |
@@ -51,6 +54,12 @@ jobs:
           ~/.stack
           **/.stack-work
         key: ${{ runner.os }}-{{ matrix.ghc }}-error-messages-${{ hashFiles('stack.yaml') }}
+
+    # For some reason setup-haskell-cabal sometimes doesn't run 'cabal update'.
+    - name: Initialize Cabal
+      if: steps.cache-stack-and-cabal.outputs.cache-hit != 'true'
+      run: |
+        cabal update
 
     - name: Test Error Messages
       run: |
