@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4ee30ee2609a9ce27a24d1aad02b6f6f59c78c58a0bd2eda2190c508fb122aa2
+-- hash: a497859ba14936d1886bced184dddf8a83c13cbf1000d6d2451b184836f3e176
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -42,7 +42,7 @@ library
       Paths_typelevel_rewrite_rules
   hs-source-dirs:
       src
-  ghc-options: -W -Wall
+  ghc-options: -W -Wall -dcore-lint
   build-depends:
       base >=4.12 && <5
     , ghc >=8.10.2
@@ -68,6 +68,7 @@ test-suite should-compile
       Paths_typelevel_rewrite_rules
   hs-source-dirs:
       test/should-compile
+  ghc-options: -W -Wall -dcore-lint
   build-depends:
       base >=4.12 && <5
     , ghc-prim >=0.5.3

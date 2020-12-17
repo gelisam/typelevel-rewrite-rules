@@ -182,7 +182,7 @@ solve rules givens _ wanteds = do
 
           let replaceCt :: ReplaceCt
               replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evByFiat "TypeLevel.Rewrite" lhs' rhs'
+                { evidenceOfCorrectness  = evByFiat "TypeLevel.Rewrite" lhs rhs
                 , replacedConstraint     = wanted
                 , replacementConstraints = [wanted']
                 }
