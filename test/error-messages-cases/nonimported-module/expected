@@ -1,2 +1,2 @@
 # FIXME: how to catch this error message and replace it with a nicer one?
-    attempting to use module ‘nonimported-module-0.0.0-8FLs9IVlgAgGKKwnsRmtZL:NonimportedModule.ZRewriteRules’ (src/NonimportedModule/ZRewriteRules.hs) which is not loaded
+    attempting to use module ‘nonimported-module-0.0.0-1finyOzQnsgIioWcIf3KAR:NonimportedModule.ZRewriteRules’ (src/NonimportedModule/ZRewriteRules.hs) which is not loaded

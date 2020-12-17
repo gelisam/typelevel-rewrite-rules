@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 39333759cadf9dcb60abcbbe40b2c6f03d3bc26329fa05f366cfa8b7c6fd78f4
+-- hash: a497859ba14936d1886bced184dddf8a83c13cbf1000d6d2451b184836f3e176
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -45,11 +45,11 @@ library
   ghc-options: -W -Wall -dcore-lint
   build-depends:
       base >=4.12 && <5
-    , ghc >=8.6.3 && <8.10
+    , ghc >=8.10.2
     , ghc-prim >=0.5.3
-    , ghc-tcplugins-extra >=0.3
+    , ghc-tcplugins-extra >=0.4
     , term-rewriting >=0.3.0.1
-    , transformers >=0.5.5.0
+    , transformers >=0.5.6.2
   default-language: Haskell2010
 
 test-suite should-compile
@@ -73,5 +73,5 @@ test-suite should-compile
       base >=4.12 && <5
     , ghc-prim >=0.5.3
     , typelevel-rewrite-rules
-    , vinyl
+    , vinyl >=0.13.0
   default-language: Haskell2010
