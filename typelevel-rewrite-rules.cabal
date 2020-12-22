@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a497859ba14936d1886bced184dddf8a83c13cbf1000d6d2451b184836f3e176
+-- hash: 37c52d2651928b3baeccb810aca77eaa192cbdc364c6f99b1da58c56b61cb42e
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -47,7 +47,6 @@ library
       base >=4.12 && <5
     , ghc >=8.10.2
     , ghc-prim >=0.5.3
-    , ghc-tcplugins-extra >=0.4
     , term-rewriting >=0.3.0.1
     , transformers >=0.5.6.2
   default-language: Haskell2010
@@ -60,6 +59,8 @@ test-suite should-compile
       Data.Vinyl.TypeLevel.Test
       GHC.TypeLits.RewriteRules
       GHC.TypeLits.Test
+      InstanceConstraints.Laws
+      InstanceConstraints.Test
       MonoKinds.Append
       MonoKinds.Test
       SamePackage.Append

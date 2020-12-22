@@ -6,22 +6,18 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Writer
 import Data.Foldable
 import Data.Traversable
-import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
-import Constraint
-  ( CtEvidence(CtWanted), ShadowInfo(WDeriv), TcEvDest(HoleDest), Ct, CtLoc, ctEvPred, ctEvidence
-  , ctLoc, mkNonCanonical
-  )
-import GHC (Type)
+import Coercion (Role(Representational), mkUnivCo)
+import Constraint (Ct, ctEvExpr, ctEvPred, ctEvidence, ctLoc, mkNonCanonical)
+import GHC (Class, Type)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
-import Predicate (EqRel(NomEq), mkPrimEqPred)
-import TcEvidence (EvTerm)
-import TcPluginM (newCoercionHole)
+import Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
+import TcEvidence (EvExpr, EvTerm, evCast)
+import TcPluginM (newWanted)
 import TcRnTypes
-import TcType (TcPredType)
+import TyCoRep (UnivCoProvenance(PluginProv))
 import TyCon (synTyConDefn_maybe)
-import Predicate (Pred(EqPred), classifyPredType)
 
 import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint
@@ -132,16 +128,19 @@ asEqualityConstraint ct = do
       -> pure (lhs, rhs)
     _ -> Nothing
 
-toEqualityConstraint
-  :: Type -> Type -> CtLoc -> TcPluginM Ct
-toEqualityConstraint lhs rhs loc = do
-  let tcPredType :: TcPredType
-      tcPredType = mkPrimEqPred lhs rhs
-
-  hole <- newCoercionHole tcPredType
-
-  pure $ mkNonCanonical
-       $ CtWanted tcPredType (HoleDest hole) WDeriv loc
+asInstanceConstraint
+  :: Ct
+  -> Maybe (Class, [Type])
+asInstanceConstraint ct = do
+  let predTree
+        = classifyPredType
+        $ ctEvPred
+        $ ctEvidence
+        $ ct
+  case predTree of
+    ClassPred typeclass args
+      -> pure (typeclass, args)
+    _ -> Nothing
 
 
 solve
@@ -168,6 +167,9 @@ solve rules givens _ wanteds = do
       for_ (asEqualityConstraint wanted) $ \(lhs, rhs) -> do
         -- lhs ~ rhs => ...
 
+        -- lhs ~ rhs
+        let predType = mkPrimEqPred lhs rhs
+
         let lhsTypeTerm = applyTypeSubst typeSubst $ toTypeTerm lhs
         let rhsTypeTerm = applyTypeSubst typeSubst $ toTypeTerm rhs
         let lhsTypeTerm' = applyRules rules lhsTypeTerm
@@ -178,11 +180,56 @@ solve rules givens _ wanteds = do
           let lhs' = fromTypeTerm lhsTypeTerm'
           let rhs' = fromTypeTerm rhsTypeTerm'
 
-          wanted' <- lift $ toEqualityConstraint lhs' rhs' (ctLoc wanted)
+          -- lhs' ~ rhs'
+          let predType' = mkPrimEqPred lhs' rhs'
 
+          -- co :: (lhs' ~ rhs') ~R (lhs ~ rhs)
+          let co = mkUnivCo
+                     (PluginProv "TypeLevel.Rewrite")
+                     Representational
+                     predType'
+                     predType
+          evWanted' <- lift $ newWanted (ctLoc wanted) predType'
+          let wanted' = mkNonCanonical evWanted'
+          let futureDict :: EvExpr
+              futureDict = ctEvExpr evWanted'
           let replaceCt :: ReplaceCt
               replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evByFiat "TypeLevel.Rewrite" lhs rhs
+                { evidenceOfCorrectness  = evCast futureDict co
+                , replacedConstraint     = wanted
+                , replacementConstraints = [wanted']
+                }
+          tell [replaceCt]
+
+      for_ (asInstanceConstraint wanted) $ \(typeclass, args) -> do
+        -- C a ... => ...
+
+        -- C a ...
+        let predType = mkClassPred typeclass args
+
+        let argTypeTerms = fmap (applyTypeSubst typeSubst . toTypeTerm) args
+        let argTypeTerms' = fmap (applyRules rules) argTypeTerms
+
+        unless (argTypeTerms' == argTypeTerms) $ do
+          -- C a' ... => ...
+          let args' = fmap fromTypeTerm argTypeTerms'
+
+          -- C a' ...
+          let predType' = mkClassPred typeclass args'
+
+          -- co :: C a' ... ~R C a ...
+          let co = mkUnivCo
+                     (PluginProv "TypeLevel.Rewrite")
+                     Representational
+                     predType'
+                     predType
+          evWanted' <- lift $ newWanted (ctLoc wanted) predType'
+          let wanted' = mkNonCanonical evWanted'
+          let futureDict :: EvExpr
+              futureDict = ctEvExpr evWanted'
+          let replaceCt :: ReplaceCt
+              replaceCt = ReplaceCt
+                { evidenceOfCorrectness  = evCast futureDict co
                 , replacedConstraint     = wanted
                 , replacementConstraints = [wanted']
                 }
