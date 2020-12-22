@@ -22,7 +22,6 @@ library:
   source-dirs:      src
   dependencies:
     - ghc >= 8.10.2
-    - ghc-tcplugins-extra >= 0.4
     - term-rewriting >= 0.3.0.1
     - transformers >= 0.5.6.2
 
