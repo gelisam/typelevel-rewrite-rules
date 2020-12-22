@@ -116,8 +116,17 @@ main = do
                                  $ t
                               else t
 
+                -- "package-0.0.0-1finyOzQnsgIioWcIf3KAR:Module" -> "package-0.0.0-<hash>:Module"
+                cleanHashes :: Text -> Text
+                cleanHashes t = if "0.0.0-" `Text.isInfixOf` t
+                                then let (pre, hashPost) = Text.breakOn "0.0.0-" t
+                                         post = Text.dropWhile (/= ':') hashPost
+                                     in pre <> "0.0.0-<hash>" <> cleanHashes post
+                                else t
+
                 actualLines :: [Text]
                 actualLines = List.mapMaybe stripCasePrefix
+                            . fmap cleanHashes
                             . fmap cleanLine
                             . Text.lines
                             $ actualOutput
