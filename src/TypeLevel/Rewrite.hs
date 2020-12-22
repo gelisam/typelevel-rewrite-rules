@@ -9,19 +9,20 @@ import Data.Traversable
 import GHC.TcPluginM.Extra (evByFiat)
 
 -- GHC API
+import Coercion (Role(Representational), mkUnivCo)
 import Constraint
-  ( CtEvidence(CtWanted), ShadowInfo(WDeriv), TcEvDest(HoleDest), Ct, CtLoc, ctEvPred, ctEvidence
-  , ctLoc, mkNonCanonical
+  ( CtEvidence(CtWanted), ShadowInfo(WDeriv), TcEvDest(HoleDest), Ct, CtLoc, ctEvExpr, ctEvPred
+  , ctEvidence, ctLoc, mkNonCanonical
   )
-import GHC (Type)
+import GHC (Class, Type)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
-import Predicate (EqRel(NomEq), mkPrimEqPred)
-import TcEvidence (EvTerm)
-import TcPluginM (newCoercionHole)
+import Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
+import TcEvidence (EvExpr, EvTerm, evCast)
+import TcPluginM (newCoercionHole, newWanted)
 import TcRnTypes
 import TcType (TcPredType)
+import TyCoRep (UnivCoProvenance(PluginProv))
 import TyCon (synTyConDefn_maybe)
-import Predicate (Pred(EqPred), classifyPredType)
 
 import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint
@@ -132,6 +133,20 @@ asEqualityConstraint ct = do
       -> pure (lhs, rhs)
     _ -> Nothing
 
+asInstanceConstraint
+  :: Ct
+  -> Maybe (Class, [Type])
+asInstanceConstraint ct = do
+  let predTree
+        = classifyPredType
+        $ ctEvPred
+        $ ctEvidence
+        $ ct
+  case predTree of
+    ClassPred typeclass args
+      -> pure (typeclass, args)
+    _ -> Nothing
+
 toEqualityConstraint
   :: Type -> Type -> CtLoc -> TcPluginM Ct
 toEqualityConstraint lhs rhs loc = do
@@ -183,6 +198,35 @@ solve rules givens _ wanteds = do
           let replaceCt :: ReplaceCt
               replaceCt = ReplaceCt
                 { evidenceOfCorrectness  = evByFiat "TypeLevel.Rewrite" lhs rhs
+                , replacedConstraint     = wanted
+                , replacementConstraints = [wanted']
+                }
+          tell [replaceCt]
+
+      for_ (asInstanceConstraint wanted) $ \(typeclass, args) -> do
+        -- C a ... => ...
+
+        let argTypeTerms = fmap (applyTypeSubst typeSubst . toTypeTerm) args
+        let argTypeTerms' = fmap (applyRules rules) argTypeTerms
+
+        unless (argTypeTerms' == argTypeTerms) $ do
+          -- C' a' ... => ...
+          let args' = fmap fromTypeTerm argTypeTerms'
+
+          -- co :: C a' ... ~ C a ...
+          let co = mkUnivCo
+                     (PluginProv "TypeLevel.Rewrite")
+                     Representational
+                     (mkClassPred typeclass args')
+                     (mkClassPred typeclass args)
+          evWanted' <- lift $ newWanted (ctLoc wanted)
+                                        (mkClassPred typeclass args')
+          let wanted' = mkNonCanonical evWanted'
+          let futureDict :: EvExpr
+              futureDict = ctEvExpr evWanted'
+          let replaceCt :: ReplaceCt
+              replaceCt = ReplaceCt
+                { evidenceOfCorrectness  = evCast futureDict co
                 , replacedConstraint     = wanted
                 , replacementConstraints = [wanted']
                 }
