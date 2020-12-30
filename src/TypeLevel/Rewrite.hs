@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, ViewPatterns #-}
+{-# LANGUAGE LambdaCase, RecordWildCards, ViewPatterns #-}
 module TypeLevel.Rewrite (plugin) where
 
 import Control.Monad
@@ -8,11 +8,10 @@ import Data.Foldable
 import Data.Traversable
 
 -- GHC API
+import GhcPlugins (eqType)
 import Coercion (Role(Representational), mkUnivCo)
-import Constraint (Ct, ctEvExpr, ctEvPred, ctEvidence, ctLoc, mkNonCanonical)
-import GHC (Class, Type)
+import Constraint (Ct, ctEvExpr, ctLoc, mkNonCanonical)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
-import Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
 import TcEvidence (EvExpr, EvTerm, evCast)
 import TcPluginM (newWanted)
 import TcRnTypes
@@ -20,6 +19,7 @@ import TyCoRep (UnivCoProvenance(PluginProv))
 import TyCon (synTyConDefn_maybe)
 
 import TypeLevel.Rewrite.Internal.ApplyRules
+import TypeLevel.Rewrite.Internal.DecomposedConstraint
 import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint
 import TypeLevel.Rewrite.Internal.TypeEq
@@ -114,35 +114,6 @@ plugin = defaultPlugin
   }
 
 
-asEqualityConstraint
-  :: Ct
-  -> Maybe (Type, Type)
-asEqualityConstraint ct = do
-  let predTree
-        = classifyPredType
-        $ ctEvPred
-        $ ctEvidence
-        $ ct
-  case predTree of
-    EqPred NomEq lhs rhs
-      -> pure (lhs, rhs)
-    _ -> Nothing
-
-asInstanceConstraint
-  :: Ct
-  -> Maybe (Class, [Type])
-asInstanceConstraint ct = do
-  let predTree
-        = classifyPredType
-        $ ctEvPred
-        $ ctEvidence
-        $ ct
-  case predTree of
-    ClassPred typeclass args
-      -> pure (typeclass, args)
-    _ -> Nothing
-
-
 solve
   :: [TypeRule]
   -> [Ct]  -- ^ Given constraints
@@ -164,60 +135,20 @@ solve rules givens _ wanteds = do
   replaceCts <- execWriterT $ do
     for_ wanteds $ \wanted -> do
       -- wanted => ...
-      for_ (asEqualityConstraint wanted) $ \(lhs, rhs) -> do
-        -- lhs ~ rhs => ...
+      for_ (asDecomposedConstraint wanted) $ \types -> do
+        -- C a b c => ...
 
-        -- lhs ~ rhs
-        let predType = mkPrimEqPred lhs rhs
+        -- C a b c
+        let typeTerms = fmap toTypeTerm types
+        let predType = fromDecomposeConstraint types
 
-        let lhsTypeTerm = toTypeTerm lhs
-        let rhsTypeTerm = toTypeTerm rhs
-        let lhsTypeTerm' = applyRules typeSubst rules lhsTypeTerm
-        let rhsTypeTerm' = applyRules typeSubst rules rhsTypeTerm
+        -- C a' b' c'
+        let typeTerms' = fmap (applyRules typeSubst rules) typeTerms
+        let types' = fmap fromTypeTerm typeTerms'
+        let predType' = fromDecomposeConstraint types'
 
-        unless (lhsTypeTerm' == lhsTypeTerm && rhsTypeTerm' == rhsTypeTerm) $ do
-          -- lhs' ~ rhs' => ...
-          let lhs' = fromTypeTerm lhsTypeTerm'
-          let rhs' = fromTypeTerm rhsTypeTerm'
-
-          -- lhs' ~ rhs'
-          let predType' = mkPrimEqPred lhs' rhs'
-
-          -- co :: (lhs' ~ rhs') ~R (lhs ~ rhs)
-          let co = mkUnivCo
-                     (PluginProv "TypeLevel.Rewrite")
-                     Representational
-                     predType'
-                     predType
-          evWanted' <- lift $ newWanted (ctLoc wanted) predType'
-          let wanted' = mkNonCanonical evWanted'
-          let futureDict :: EvExpr
-              futureDict = ctEvExpr evWanted'
-          let replaceCt :: ReplaceCt
-              replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evCast futureDict co
-                , replacedConstraint     = wanted
-                , replacementConstraints = [wanted']
-                }
-          tell [replaceCt]
-
-      for_ (asInstanceConstraint wanted) $ \(typeclass, args) -> do
-        -- C a ... => ...
-
-        -- C a ...
-        let predType = mkClassPred typeclass args
-
-        let argTypeTerms = fmap toTypeTerm args
-        let argTypeTerms' = fmap (applyRules typeSubst rules) argTypeTerms
-
-        unless (argTypeTerms' == argTypeTerms) $ do
-          -- C a' ... => ...
-          let args' = fmap fromTypeTerm argTypeTerms'
-
-          -- C a' ...
-          let predType' = mkClassPred typeclass args'
-
-          -- co :: C a' ... ~R C a ...
+        unless (eqType predType' predType) $ do
+          -- co :: C a' b' c'  ~R  C a b c
           let co = mkUnivCo
                      (PluginProv "TypeLevel.Rewrite")
                      Representational
