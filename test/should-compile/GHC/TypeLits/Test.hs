@@ -5,7 +5,7 @@
 module GHC.TypeLits.Test where
 
 import GHC.TypeLits
-import GHC.TypeLits.RewriteRules
+import GHC.TypeLits.RewriteRules ()
 
 
 ex1 :: ((1 + n) ~ (n + 1) => r)

@@ -10,6 +10,7 @@ import Data.Foldable (asum, for_)
 import Data.Map (Map)
 import Data.Maybe (isJust)
 import Data.Traversable
+import qualified Data.List as List
 import qualified Data.Map as Map
 
 -- GHC API
@@ -24,6 +25,7 @@ import qualified Data.Rewriting.Substitution.Type as Substitution
 
 import TypeLevel.Rewrite.Internal.TypeEq
 import TypeLevel.Rewrite.Internal.TypeNode
+import TypeLevel.Rewrite.Internal.TypeSubst
 import TypeLevel.Rewrite.Internal.TypeTemplate
 import TypeLevel.Rewrite.Internal.TypeTerm
 
@@ -39,19 +41,20 @@ toTypeRule_maybe _
   = Nothing
 
 applyRules
-  :: [TypeRule]
+  :: TypeSubst
+  -> [TypeRule]
   -> TypeTerm
   -> TypeTerm
-applyRules []
+applyRules _ []
   = id
-applyRules rules
+applyRules typeSubst rules
   = go (length rules * 100)
   where
     go :: Int -> TypeTerm -> TypeTerm
     go 0 _
       = error "the rewrite rules form a cycle"
     go fuel typeTerm
-      = case multiRewrite rules typeTerm of
+      = case multiRewrite typeSubst rules typeTerm of
           Nothing
             -> typeTerm
           Just typeTerm'
@@ -60,35 +63,38 @@ applyRules rules
 type Subst = Map TyVar (Term TypeNode TypeEq)
 
 multiRewrite
-  :: [TypeRule]
+  :: TypeSubst
+  -> [TypeRule]
   -> TypeTerm
   -> Maybe TypeTerm
-multiRewrite rules input
+multiRewrite typeSubst rules input
   = asum
-    [ singleRewrite rule input
+    [ singleRewrite typeSubst rule input
     | rule <- rules
     ]
 
 -- >>> singleRewrite (F x (F x y) ~ F x y) [F a (F a b)]
 -- Just [F a b]
 singleRewrite
-  :: TypeRule
+  :: TypeSubst
+  -> TypeRule
   -> TypeTerm
   -> Maybe TypeTerm
-singleRewrite rule input@(Fun inputF inputXS)
-    = topLevelRewrite rule input
-  <|> zipRewrite inputF inputXS (fmap (singleRewrite rule) inputXS)
-singleRewrite rule input
-  = topLevelRewrite rule input
+singleRewrite typeSubst rule input@(Fun inputF inputXS)
+    = topLevelRewrite typeSubst rule input
+  <|> zipRewrite inputF inputXS (fmap (singleRewrite typeSubst rule) inputXS)
+singleRewrite typeSubst rule input
+  = topLevelRewrite typeSubst rule input
 
 
 -- >>> topLevelRewrite (F x (F x y) ~ F x y) (F a (F a b))
 -- Just (F a b)
 topLevelRewrite
-  :: TypeRule
+  :: TypeSubst
+  -> TypeRule
   -> TypeTerm
   -> Maybe TypeTerm
-topLevelRewrite (Rule pattern0 pattern') input0 = do
+topLevelRewrite typeSubst (Rule pattern0 pattern') input0 = do
   subst <- execStateT (go pattern0 input0) Map.empty
   gApply (Substitution.fromMap subst) pattern'
   where
@@ -110,8 +116,9 @@ topLevelRewrite (Rule pattern0 pattern') input0 = do
       guard (length patternXS == length inputXS)
       for_ (zip patternXS inputXS) $ \(pattern, input) -> do
         go pattern input
-    go _ _ = do
-      lift Nothing
+    go pattern (Var var) = do
+      input <- lift $ List.lookup var typeSubst
+      go pattern input
 
 -- >>> zipRewrite F [x,y,z] [Nothing,Nothing,Nothing]
 -- Nothing

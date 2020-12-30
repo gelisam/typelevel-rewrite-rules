@@ -23,7 +23,6 @@ import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint
 import TypeLevel.Rewrite.Internal.TypeEq
 import TypeLevel.Rewrite.Internal.TypeRule
-import TypeLevel.Rewrite.Internal.TypeSubst
 import TypeLevel.Rewrite.Internal.TypeTerm
 
 -- printf-debugging:
@@ -170,10 +169,10 @@ solve rules givens _ wanteds = do
         -- lhs ~ rhs
         let predType = mkPrimEqPred lhs rhs
 
-        let lhsTypeTerm = applyTypeSubst typeSubst $ toTypeTerm lhs
-        let rhsTypeTerm = applyTypeSubst typeSubst $ toTypeTerm rhs
-        let lhsTypeTerm' = applyRules rules lhsTypeTerm
-        let rhsTypeTerm' = applyRules rules rhsTypeTerm
+        let lhsTypeTerm = toTypeTerm lhs
+        let rhsTypeTerm = toTypeTerm rhs
+        let lhsTypeTerm' = applyRules typeSubst rules lhsTypeTerm
+        let rhsTypeTerm' = applyRules typeSubst rules rhsTypeTerm
 
         unless (lhsTypeTerm' == lhsTypeTerm && rhsTypeTerm' == rhsTypeTerm) $ do
           -- lhs' ~ rhs' => ...
@@ -207,8 +206,8 @@ solve rules givens _ wanteds = do
         -- C a ...
         let predType = mkClassPred typeclass args
 
-        let argTypeTerms = fmap (applyTypeSubst typeSubst . toTypeTerm) args
-        let argTypeTerms' = fmap (applyRules rules) argTypeTerms
+        let argTypeTerms = fmap toTypeTerm args
+        let argTypeTerms' = fmap (applyRules typeSubst rules) argTypeTerms
 
         unless (argTypeTerms' == argTypeTerms) $ do
           -- C a' ... => ...
