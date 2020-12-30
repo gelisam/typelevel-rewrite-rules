@@ -4,7 +4,6 @@ module TypeLevel.Rewrite.Internal.ApplyRules where
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
 import Data.Foldable (asum, for_)
 import Data.Map (Map)
@@ -13,8 +12,7 @@ import Data.Traversable
 import qualified Data.Map as Map
 
 -- GHC API
-import Name (getOccString)
-import Type (TyVar, Type)
+import Type (TyVar)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))
