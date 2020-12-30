@@ -40,3 +40,12 @@ f5 :: forall a b x y
       )
    => ()
 f5 = foo @(F a x)
+
+f6 :: forall a b x y
+    . ( F a b ~ G x y
+      , y ~ x
+      , x ~ y
+      , Foo (F a b)
+      )
+   => ()
+f6 = foo @(F a (G x y))
