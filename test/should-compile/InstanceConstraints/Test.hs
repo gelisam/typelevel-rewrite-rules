@@ -14,3 +14,29 @@ f1 = foo @(F a (F a b))
 
 f2 :: forall a b. Foo [F a b] => ()
 f2 = foo @[F a (F a b)]
+
+f3 :: forall a b x y
+    . ( F a b ~ y
+      , y ~ x
+      , Foo (F a b)
+      )
+   => ()
+f3 = foo @(F a x)
+
+f4 :: forall a b x y
+    . ( F a b ~ y
+      , y ~ x
+      , x ~ y
+      , Foo (F a b)
+      )
+   => ()
+f4 = foo @(F a x)
+
+f5 :: forall a b x y
+    . ( F a b ~ x
+      , y ~ x
+      , x ~ y
+      , Foo (F a b)
+      )
+   => ()
+f5 = foo @(F a x)

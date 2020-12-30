@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0f1d80ad1b58c76b448aa0a3981667dbce1acc761f6fd552a6dfc24c989acd71
+-- hash: 55fe147a11395496d3c845b21cca62242fdb64a22fe2f652cb92f5ff44539b11
 
 name:           typelevel-rewrite-rules
 version:        0.1
@@ -29,6 +29,7 @@ library
   exposed-modules:
       TypeLevel.Append
       TypeLevel.Rewrite
+      TypeLevel.Rewrite.Internal.ApplyRules
       TypeLevel.Rewrite.Internal.Lookup
       TypeLevel.Rewrite.Internal.PrettyPrint
       TypeLevel.Rewrite.Internal.Term
