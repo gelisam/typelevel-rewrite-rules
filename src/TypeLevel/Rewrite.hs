@@ -19,6 +19,7 @@ import TcRnTypes
 import TyCoRep (UnivCoProvenance(PluginProv))
 import TyCon (synTyConDefn_maybe)
 
+import TypeLevel.Rewrite.Internal.ApplyRules
 import TypeLevel.Rewrite.Internal.Lookup
 import TypeLevel.Rewrite.Internal.PrettyPrint
 import TypeLevel.Rewrite.Internal.TypeEq
