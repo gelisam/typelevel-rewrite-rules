@@ -82,3 +82,22 @@ ex2f :: forall proxy xs as bs cs r. xs ~ ((as ++ bs) ++ cs)
      -> proxy cs
      -> r
 ex2f r _ _ _ = r
+
+ex2g :: (as ++ (bs ++ cs)) ~ cs
+     => (((as ++ bs) ++ cs) ~ cs => r)
+     -> proxy as
+     -> proxy bs
+     -> proxy cs
+     -> r
+ex2g r _ _ _ = r
+
+ex2h :: forall proxy xs ys as bs cs r
+      . ( ys ~ xs
+        , xs ~ ((as ++ bs) ++ cs)
+        )
+     => (xs ~ (as ++ (bs ++ cs)) => r)
+     -> proxy as
+     -> proxy bs
+     -> proxy cs
+     -> r
+ex2h r _ _ _ = r
