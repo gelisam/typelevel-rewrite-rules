@@ -11,7 +11,7 @@ on:
 
   # Build once a month, to detect missing upper bounds.
   schedule:
-    - cron: '10 2 * * *'
+    - cron: '0 0 1 * *'
 
 jobs:
   stack:
