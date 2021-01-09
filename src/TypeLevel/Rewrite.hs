@@ -8,9 +8,9 @@ import Data.Foldable
 import Data.Traversable
 
 -- GHC API
-import GhcPlugins (eqType)
+import GhcPlugins (PredType, eqType)
 import Coercion (Role(Representational), mkUnivCo)
-import Constraint (Ct, ctEvExpr, ctLoc, mkNonCanonical)
+import Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
 import TcEvidence (EvExpr, EvTerm, evCast)
 import TcPluginM (newWanted)
@@ -114,6 +114,17 @@ plugin = defaultPlugin
   }
 
 
+srcSpanPreservingNewWanted
+  :: Ct
+  -> PredType
+  -> TcPluginM CtEvidence
+srcSpanPreservingNewWanted oldCt newPredType = do
+  wanted <- newWanted (ctLoc oldCt) newPredType
+
+  -- ctLoc only copies the "arising from function X" part but not the location
+  -- etc., so we need to copy the rest of it manually
+  pure $ wanted { ctev_loc = ctLoc oldCt }
+
 solve
   :: [TypeRule]
   -> [Ct]  -- ^ Given constraints
@@ -154,7 +165,7 @@ solve rules givens _ wanteds = do
                      Representational
                      predType'
                      predType
-          evWanted' <- lift $ newWanted (ctLoc wanted) predType'
+          evWanted' <- lift $ srcSpanPreservingNewWanted wanted predType'
           let wanted' = mkNonCanonical evWanted'
           let futureDict :: EvExpr
               futureDict = ctEvExpr evWanted'
