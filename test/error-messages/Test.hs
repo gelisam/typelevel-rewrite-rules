@@ -124,10 +124,19 @@ main = do
                                      in pre <> "0.0.0-<hash>" <> cleanHashes post
                                 else t
 
+                -- "/Users/gelisam/working/haskell/typelevel-rewrite-rules/test/error-messages-cases/" -> "<path>/error-message-cases/"
+                cleanPaths :: Text -> Text
+                cleanPaths t = if "/error-messages-cases/" `Text.isInfixOf` t
+                                then let (prePath, post) = Text.breakOn "/error-messages-cases/" t
+                                         pre = Text.unwords $ init $ Text.words prePath
+                                     in pre <> " <path>" <> post
+                                else t
+
                 actualLines :: [Text]
                 actualLines = List.mapMaybe stripCasePrefix
                             . fmap cleanHashes
                             . fmap cleanLine
+                            . fmap cleanPaths
                             . Text.lines
                             $ actualOutput
 
