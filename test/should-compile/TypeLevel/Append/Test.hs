@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds, RankNTypes, ScopedTypeVariables, TypeFamilies, TypeOperators #-}
-{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
+{-# OPTIONS_GHC -fconstraint-solver-iterations=10
+                -fplugin TypeLevel.Rewrite
                 -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.RightIdentity
                 -fplugin-opt=TypeLevel.Rewrite:TypeLevel.Append.RightAssociative #-}
 module TypeLevel.Append.Test where

@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
-{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
+{-# OPTIONS_GHC -fconstraint-solver-iterations=10
+                -fplugin TypeLevel.Rewrite
                 -fplugin-opt=TypeLevel.Rewrite:MonoKinds.Append.RightIdentity
                 -fplugin-opt=TypeLevel.Rewrite:MonoKinds.Append.RightAssociative #-}
 module MonoKinds.Test where

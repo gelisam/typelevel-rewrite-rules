@@ -153,27 +153,27 @@ solve rules givens _ wanteds = do
         let typeTerms = fmap toTypeTerm types
         let predType = fromDecomposeConstraint types
 
-        -- C a' b' c'
-        let typeTerms' = fmap (applyRules typeSubst rules) typeTerms
-        let types' = fmap fromTypeTerm typeTerms'
-        let predType' = fromDecomposeConstraint types'
+        for_ (applyRules typeSubst rules typeTerms) $ \typeTerms' -> do
+          -- C a' b' c'
+          let types' = fmap fromTypeTerm typeTerms'
+          let predType' = fromDecomposeConstraint types'
 
-        unless (eqType predType' predType) $ do
-          -- co :: C a' b' c'  ~R  C a b c
-          let co = mkUnivCo
-                     (PluginProv "TypeLevel.Rewrite")
-                     Representational
-                     predType'
-                     predType
-          evWanted' <- lift $ srcSpanPreservingNewWanted wanted predType'
-          let wanted' = mkNonCanonical evWanted'
-          let futureDict :: EvExpr
-              futureDict = ctEvExpr evWanted'
-          let replaceCt :: ReplaceCt
-              replaceCt = ReplaceCt
-                { evidenceOfCorrectness  = evCast futureDict co
-                , replacedConstraint     = wanted
-                , replacementConstraints = [wanted']
-                }
-          tell [replaceCt]
+          unless (eqType predType' predType) $ do
+            -- co :: C a' b' c'  ~R  C a b c
+            let co = mkUnivCo
+                       (PluginProv "TypeLevel.Rewrite")
+                       Representational
+                       predType'
+                       predType
+            evWanted' <- lift $ srcSpanPreservingNewWanted wanted predType'
+            let wanted' = mkNonCanonical evWanted'
+            let futureDict :: EvExpr
+                futureDict = ctEvExpr evWanted'
+            let replaceCt :: ReplaceCt
+                replaceCt = ReplaceCt
+                  { evidenceOfCorrectness  = evCast futureDict co
+                  , replacedConstraint     = wanted
+                  , replacementConstraints = [wanted']
+                  }
+            tell [replaceCt]
   pure $ combineReplaceCts replaceCts

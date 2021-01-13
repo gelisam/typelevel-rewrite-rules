@@ -1,13 +1,14 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase, ViewPatterns #-}
 {-# OPTIONS -Wno-name-shadowing #-}
 module TypeLevel.Rewrite.Internal.ApplyRules where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Trans.Class
 import Control.Monad.Trans.State
 import Data.Foldable (asum, for_)
 import Data.Map (Map)
-import Data.Maybe (isJust)
+import Data.Maybe (listToMaybe, maybeToList)
 import Data.Traversable
 import qualified Data.Map as Map
 
@@ -27,28 +28,16 @@ import TypeLevel.Rewrite.Internal.TypeSubst
 import TypeLevel.Rewrite.Internal.TypeTerm
 
 
-applyRules
-  :: TypeSubst
-  -> [TypeRule]
-  -> TypeTerm
-  -> TypeTerm
-applyRules _ []
-  = id
-applyRules typeSubst rules
-  = go (length rules * 100)
-  where
-    go :: Int -> TypeTerm -> TypeTerm
-    go 0 _
-      = error "the rewrite rules form a cycle"
-    go fuel typeTerm
-      = case multiRewrite typeSubst rules typeTerm of
-          Nothing
-            -> typeTerm
-          Just typeTerm'
-            -> go (fuel - 1) typeTerm'
-
-
 type Subst = Map TyVar (Term TypeNode TypeEq)
+
+applyRules
+  :: Traversable t
+  => TypeSubst
+  -> [TypeRule]
+  -> t TypeTerm
+  -> Maybe (t TypeTerm)
+applyRules typeSubst rules inputs
+  = traverseFirst (multiRewrite typeSubst rules) inputs
 
 multiRewrite
   :: TypeSubst
@@ -70,7 +59,7 @@ singleRewrite
   -> Maybe TypeTerm
 singleRewrite typeSubst rule input@(Fun inputF inputXS)
     = topLevelRewrite typeSubst rule input
-  <|> zipRewrite inputF inputXS (fmap (singleRewrite typeSubst rule) inputXS)
+  <|> (Fun inputF <$> traverseFirst (singleRewrite typeSubst rule) inputXS)
 singleRewrite typeSubst rule input
   = topLevelRewrite typeSubst rule input
 
@@ -110,17 +99,40 @@ topLevelRewrite typeSubst (Rule pattern0 pattern') input0 = do
                                $ typeSubst
       asum $ fmap (go pattern) possibleReplacements
 
--- >>> zipRewrite F [x,y,z] [Nothing,Nothing,Nothing]
+-- >>> traverseFirst (\x -> if even x then Just (10 + x) else Nothing) [1,3,5]
 -- Nothing
--- >>> zipRewrite F [x,y,z] [Just x',Nothing,Just z']
--- Just [x',y,z']
-zipRewrite
-  :: TypeNode
-  -> [TypeTerm]
-  -> [Maybe TypeTerm]
-  -> Maybe TypeTerm
-zipRewrite f inputXS intermediateXS = do
-  guard (any isJust intermediateXS)
-  outputXS <- for (zip inputXS intermediateXS) $ \(input, intermediate) -> do
-    intermediate <|> pure input
-  pure $ Fun f outputXS
+-- >>> traverseFirst (\x -> if even x then Just (10 + x) else Nothing) [1,2,4]
+-- Just [1,12,4]
+traverseFirst
+  :: Traversable t
+  => (a -> Maybe a)
+  -> t a
+  -> Maybe (t a)
+traverseFirst f = listToMaybe . traverseAll f
+
+-- >>> traverseAll (\x -> if even x then Just (10 + x) else Nothing) [1,3,5]
+-- []
+-- >>> traverseAll (\x -> if even x then Just (10 + x) else Nothing) [1,2,4]
+-- [[1,12,4], [1,2,14]]
+traverseAll
+  :: Traversable t
+  => (a -> Maybe a)
+  -> t a
+  -> [t a]
+traverseAll f ta = flip evalStateT False $ do
+  ta' <- for ta $ \a -> do
+    alreadyPickedOne <- get
+    if alreadyPickedOne
+      then do
+        pure a
+      else do
+        pickIt <- lift [True,False]
+        if pickIt
+          then do
+            put True
+            lift $ maybeToList $ f a
+          else do
+            pure a
+  pickedOne <- get
+  guard pickedOne
+  pure ta'
