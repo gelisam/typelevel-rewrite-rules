@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, ViewPatterns #-}
+{-# LANGUAGE LambdaCase, TupleSections, ViewPatterns #-}
 {-# OPTIONS -Wno-name-shadowing #-}
 module TypeLevel.Rewrite.Internal.ApplyRules where
 
@@ -35,18 +35,18 @@ applyRules
   => TypeSubst
   -> [TypeRule]
   -> t TypeTerm
-  -> Maybe (t TypeTerm)
+  -> Maybe (TypeRule,t TypeTerm)
 applyRules typeSubst rules inputs
-  = traverseFirst (multiRewrite typeSubst rules) inputs
+  = annotatedTraverseFirst (multiRewrite typeSubst rules) inputs
 
 multiRewrite
   :: TypeSubst
   -> [TypeRule]
   -> TypeTerm
-  -> Maybe TypeTerm
+  -> Maybe (TypeRule, TypeTerm)
 multiRewrite typeSubst rules input
   = asum
-    [ singleRewrite typeSubst rule input
+    [ (rule,) <$> singleRewrite typeSubst rule input
     | rule <- rules
     ]
 
@@ -110,6 +110,13 @@ traverseFirst
   -> Maybe (t a)
 traverseFirst f = listToMaybe . traverseAll f
 
+annotatedTraverseFirst
+  :: Traversable t
+  => (a -> Maybe (annotation, a))
+  -> t a
+  -> Maybe (annotation, t a)
+annotatedTraverseFirst f = listToMaybe . annotatedTraverseAll f
+
 -- >>> traverseAll (\x -> if even x then Just (10 + x) else Nothing) [1,3,5]
 -- []
 -- >>> traverseAll (\x -> if even x then Just (10 + x) else Nothing) [1,2,4]
@@ -119,20 +126,30 @@ traverseAll
   => (a -> Maybe a)
   -> t a
   -> [t a]
-traverseAll f ta = flip evalStateT False $ do
+traverseAll f
+  = fmap snd
+  . annotatedTraverseAll (fmap ((),) . f)
+
+annotatedTraverseAll
+  :: Traversable t
+  => (a -> Maybe (annotation, a))
+  -> t a
+  -> [(annotation, t a)]
+annotatedTraverseAll f ta = flip evalStateT Nothing $ do
   ta' <- for ta $ \a -> do
-    alreadyPickedOne <- get
-    if alreadyPickedOne
-      then do
+    get >>= \case
+      Just _ -> do
+        -- already picked one
         pure a
-      else do
+      Nothing -> do
         pickIt <- lift [True,False]
         if pickIt
           then do
-            put True
-            lift $ maybeToList $ f a
+            (annotation, a) <- lift $ maybeToList $ f a
+            put (Just annotation)
+            pure a
           else do
             pure a
-  pickedOne <- get
-  guard pickedOne
-  pure ta'
+  maybeAnnotation <- get
+  annotation <- lift $ maybeToList maybeAnnotation
+  pure (annotation, ta')

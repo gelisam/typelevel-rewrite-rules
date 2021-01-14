@@ -153,7 +153,7 @@ solve rules givens _ wanteds = do
         let typeTerms = fmap toTypeTerm types
         let predType = fromDecomposeConstraint types
 
-        for_ (applyRules typeSubst rules typeTerms) $ \typeTerms' -> do
+        for_ (applyRules typeSubst rules typeTerms) $ \(_rule, typeTerms') -> do
           -- C a' b' c'
           let types' = fmap fromTypeTerm typeTerms'
           let predType' = fromDecomposeConstraint types'
