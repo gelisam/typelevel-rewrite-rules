@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, RecordWildCards, ViewPatterns #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings, RecordWildCards, ViewPatterns #-}
 module TypeLevel.Rewrite (plugin) where
 
 import Control.Monad
@@ -8,9 +8,9 @@ import Data.Foldable
 import Data.Traversable
 
 -- GHC API
-import GhcPlugins (PredType, eqType)
 import Coercion (Role(Representational), mkUnivCo)
 import Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
+import GhcPlugins (PredType, SDoc, eqType, fsep, ppr)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
 import TcEvidence (EvExpr, EvTerm, evCast)
 import TcPluginM (newWanted)
@@ -72,7 +72,9 @@ lookupTypeRules
   :: [CommandLineOption]
   -> TcPluginM [TypeRule]
 lookupTypeRules [] = do
-  usage (show ["TypeLevel.Append.RightIdentity", "TypeLevel.Append.RightAssociative"])
+  usage (show [ "TypeLevel.Append.RightIdentity" :: String
+              , "TypeLevel.Append.RightAssociative"
+              ])
         "[]"
 lookupTypeRules fullyQualifiedTypeSynonyms = do
   -- ["TypeLevel.Append.RightIdentity", "TypeLevel.Append.RightAssociative"]
@@ -80,7 +82,7 @@ lookupTypeRules fullyQualifiedTypeSynonyms = do
     -- "TypeLevel.Append.RightIdentity"
     case splitLastDot fullyQualifiedTypeSynonym of
       Nothing -> do
-        usage (show "TypeLevel.Append.RightIdentity")
+        usage (show ("TypeLevel.Append.RightIdentity" :: String))
               (show fullyQualifiedTypeSynonym)
       Just (moduleNameStr, tyConNameStr) -> do
         -- ("TypeLevel.Append", "RightIdentity")
@@ -114,16 +116,30 @@ plugin = defaultPlugin
   }
 
 
-srcSpanPreservingNewWanted
+mkErrCtx
+  :: SDoc
+  -> ErrCtxt
+mkErrCtx errDoc = (True, \env -> pure (env, errDoc))
+
+newRuleInducedWanted
   :: Ct
+  -> TypeRule
   -> PredType
   -> TcPluginM CtEvidence
-srcSpanPreservingNewWanted oldCt newPredType = do
-  wanted <- newWanted (ctLoc oldCt) newPredType
+newRuleInducedWanted oldCt rule newPredType = do
+  let loc = ctLoc oldCt
+
+  -- include the rewrite rule in the error message, if any
+  let errMsg = fsep [ "From the typelevel rewrite rule:"
+                    , ppr (fromTypeRule rule)
+                    ]
+  let loc' = pushErrCtxtSameOrigin (mkErrCtx errMsg) loc
+
+  wanted <- newWanted loc' newPredType
 
   -- ctLoc only copies the "arising from function X" part but not the location
   -- etc., so we need to copy the rest of it manually
-  pure $ wanted { ctev_loc = ctLoc oldCt }
+  pure $ wanted { ctev_loc = loc' }
 
 solve
   :: [TypeRule]
@@ -153,7 +169,7 @@ solve rules givens _ wanteds = do
         let typeTerms = fmap toTypeTerm types
         let predType = fromDecomposeConstraint types
 
-        for_ (applyRules typeSubst rules typeTerms) $ \(_rule, typeTerms') -> do
+        for_ (applyRules typeSubst rules typeTerms) $ \(rule, typeTerms') -> do
           -- C a' b' c'
           let types' = fmap fromTypeTerm typeTerms'
           let predType' = fromDecomposeConstraint types'
@@ -165,7 +181,7 @@ solve rules givens _ wanteds = do
                        Representational
                        predType'
                        predType
-            evWanted' <- lift $ srcSpanPreservingNewWanted wanted predType'
+            evWanted' <- lift $ newRuleInducedWanted wanted rule predType'
             let wanted' = mkNonCanonical evWanted'
             let futureDict :: EvExpr
                 futureDict = ctEvExpr evWanted'
