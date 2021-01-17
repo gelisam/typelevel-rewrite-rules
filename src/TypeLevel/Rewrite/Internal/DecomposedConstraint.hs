@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, LambdaCase, RecordWildCards, ViewPatterns #-}
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, LambdaCase, RecordWildCards, ViewPatterns #-}
 module TypeLevel.Rewrite.Internal.DecomposedConstraint where
 
 import Control.Applicative
@@ -12,7 +12,7 @@ import Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkCla
 data DecomposedConstraint a
   = EqualityConstraint a a        -- lhs ~ rhs
   | InstanceConstraint Class [a]  -- C a b c
-  deriving Functor
+  deriving (Functor, Foldable, Traversable)
 
 asEqualityConstraint
   :: Ct

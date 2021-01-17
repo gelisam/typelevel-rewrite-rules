@@ -1,10 +1,11 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase, ViewPatterns #-}
 {-# OPTIONS -Wno-name-shadowing #-}
 module TypeLevel.Rewrite.Internal.TypeRule where
 
 -- GHC API
 import Name (getOccString)
-import Type (TyVar, Type)
+import Predicate (mkPrimEqPred)
+import Type (TyVar, Type, mkTyVarTy)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))
@@ -23,3 +24,27 @@ toTypeRule_maybe (toTypeTemplate_maybe -> Just (Fun (TyCon (getOccString -> "~")
   = Just (Rule lhs_ rhs_)
 toTypeRule_maybe _
   = Nothing
+
+fromTyVar
+  :: TyVar
+  -> Type
+fromTyVar
+  = mkTyVarTy
+
+fromTerm
+  :: (f -> [Type] -> Type)
+  -> (v -> Type)
+  -> Term f v
+  -> Type
+fromTerm fromF fromV = \case
+  Var v
+    -> fromV v
+  Fun f args
+    -> fromF f (fmap (fromTerm fromF fromV) args)
+
+fromTypeRule
+  :: TypeRule
+  -> Type
+fromTypeRule (Rule lhs rhs)
+  = mkPrimEqPred (fromTerm fromTypeNode fromTyVar lhs)
+                 (fromTerm fromTypeNode fromTyVar rhs)

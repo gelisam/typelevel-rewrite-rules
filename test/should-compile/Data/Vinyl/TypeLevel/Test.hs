@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
-{-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
+{-# OPTIONS_GHC -fconstraint-solver-iterations=10
+                -fplugin TypeLevel.Rewrite
                 -fplugin-opt=TypeLevel.Rewrite:Data.Vinyl.TypeLevel.RewriteRules.RightIdentity
                 -fplugin-opt=TypeLevel.Rewrite:Data.Vinyl.TypeLevel.RewriteRules.RightAssociative #-}
 module Data.Vinyl.TypeLevel.Test where
