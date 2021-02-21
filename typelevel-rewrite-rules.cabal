@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9f48bb7a095b5c1013eea7fd9a710bcd26767997c67b53ced080af167cd221bd
+-- hash: 7433f0d507fa4c45ff48ddb8ea9bd1de4b7e5ce7ea203fbd5abd344eead851ec
 
 name:           typelevel-rewrite-rules
-version:        0.1
+version:        1.0
 synopsis:       Solve type equalities using custom type-level rewrite rules
 description:    A typechecker plugin which allows the user to specify a set of domain-specific rewrite rules. These get applied whenever the compiler is unable to solve a type equality constraint, in the hope that the rewritten equality constraint will be easier to solve.
 category:       Type System
