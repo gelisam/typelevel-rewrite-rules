@@ -12,7 +12,11 @@ extra-source-files:
 - README.md
 - CHANGELOG.md
 
-ghc-options: -W -Wall -dcore-lint
+# for development
+#ghc-options: -W -Wall -dcore-lint
+
+# for release
+ghc-options: -W -Wall
 
 dependencies:
   - base >= 4.12 && < 5
