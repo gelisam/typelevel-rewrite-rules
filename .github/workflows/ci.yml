@@ -68,8 +68,10 @@ jobs:
           # Check that our upper bounds are correct by building with the latest
           # version of everything. We use cabal because it uses the latest
           # versions of our dependencies allowed by our upper bounds.
+          #
+          # TODO: switch back to "ghc: latest" once we support ghc-9.0
           - name: newest
-            ghc: latest
+            ghc: "8.10"
             os: ubuntu-latest
 
     steps:
