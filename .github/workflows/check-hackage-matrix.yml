@@ -1,4 +1,4 @@
-name: CI
+name: Check Hackage Matrix
 
 on:
   # Run once a month, to detect build failures reported on matrix.hackage.haskell.org
