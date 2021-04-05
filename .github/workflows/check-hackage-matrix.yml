@@ -15,6 +15,7 @@ jobs:
     name: Check Hackage Matrix
     runs-on: ubuntu-latest
 
+    steps:
     - name: Download Report
       run: |
         PACKAGE_NAME="typelevel-rewrite-rules"
