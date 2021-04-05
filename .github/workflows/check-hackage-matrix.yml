@@ -18,7 +18,7 @@ jobs:
     steps:
     - name: Download Report
       run: |
-        PACKAGE_NAME="recursion-schemes"
+        PACKAGE_NAME="typelevel-rewrite-rules"
 
         echo "checking https://matrix.hackage.haskell.org/#/package/$PACKAGE_NAME/ for failures..."
         REPORTS="$(curl https://matrix.hackage.haskell.org/api/v2/packages/$PACKAGE_NAME/reports)"
