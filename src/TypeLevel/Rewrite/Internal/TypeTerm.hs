@@ -2,7 +2,7 @@
 module TypeLevel.Rewrite.Internal.TypeTerm where
 
 -- GHC API
-import Type (Type, mkTyConApp)
+import GHC.Plugins (Type, mkTyConApp)
 
 -- term-rewriting API
 import Data.Rewriting.Term (Term(Fun, Var))

@@ -2,8 +2,8 @@
 module TypeLevel.Rewrite.Internal.TypeNode where
 
 -- GHC API
-import TyCon (TyCon)
-import Type (Type, isNumLitTy, isStrLitTy, mkTyConApp, splitTyConApp_maybe)
+import GHC (TyCon)
+import GHC.Plugins (Type, isNumLitTy, isStrLitTy, mkTyConApp, splitTyConApp_maybe)
 
 import TypeLevel.Rewrite.Internal.TypeEq
 

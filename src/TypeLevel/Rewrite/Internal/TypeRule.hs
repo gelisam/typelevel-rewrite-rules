@@ -3,9 +3,9 @@
 module TypeLevel.Rewrite.Internal.TypeRule where
 
 -- GHC API
-import Name (getOccString)
-import Predicate (mkPrimEqPred)
-import Type (TyVar, Type, mkTyVarTy)
+import GHC.Plugins (getOccString)
+import GHC.Core.Predicate (mkPrimEqPred)
+import GHC.Plugins (TyVar, Type, mkTyVarTy)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))

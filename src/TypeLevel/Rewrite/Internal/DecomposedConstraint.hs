@@ -5,8 +5,8 @@ import Control.Applicative
 
 -- GHC API
 import GHC (Class, Type)
-import Constraint (Ct, ctEvPred, ctEvidence)
-import Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
+import GHC.Tc.Types.Constraint (Ct, ctEvPred, ctEvidence)
+import GHC.Core.Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
 
 
 data DecomposedConstraint a

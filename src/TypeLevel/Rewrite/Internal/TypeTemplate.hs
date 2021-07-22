@@ -2,7 +2,7 @@
 module TypeLevel.Rewrite.Internal.TypeTemplate where
 
 -- GHC API
-import Type (TyVar, Type, getTyVar_maybe)
+import GHC.Plugins (TyVar, Type, getTyVar_maybe)
 
 -- term-rewriting API
 import Data.Rewriting.Term (Term(Fun, Var))

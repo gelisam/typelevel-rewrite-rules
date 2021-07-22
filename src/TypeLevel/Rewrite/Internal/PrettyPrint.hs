@@ -4,9 +4,9 @@ module TypeLevel.Rewrite.Internal.PrettyPrint where
 import Data.List (intercalate)
 
 -- GHC API
-import Outputable (ppr, showSDocUnsafe)
-import TyCon (TyCon)
-import Type (TyVar, Type)
+import GHC.Utils.Outputable (ppr, showSDocUnsafe)
+import GHC.Plugins (TyCon)
+import GHC.Plugins (TyVar, Type)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))

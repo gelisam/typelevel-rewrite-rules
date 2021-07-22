@@ -13,7 +13,7 @@ import Data.Traversable
 import qualified Data.Map as Map
 
 -- GHC API
-import Type (TyVar)
+import GHC.Plugins (TyVar)
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))

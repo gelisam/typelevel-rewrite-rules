@@ -5,16 +5,16 @@ import Control.Arrow ((***), first)
 import Data.Tuple (swap)
 
 -- GHC API
-import Finder (cannotFindModule)
+import GHC.Driver.Finder (cannotFindModule)
 import GHC (DataCon, TyCon, dataConTyCon)
-import Module (Module, ModuleName, mkModuleName)
-import OccName (mkDataOcc, mkTcOcc)
-import Panic (panicDoc)
-import TcPluginM
+import GHC (Module, ModuleName, mkModuleName)
+import GHC.Plugins (mkDataOcc, mkTcOcc)
+import GHC.Utils.Panic (panicDoc)
+import GHC.Tc.Plugin
   ( FindResult(Found), TcPluginM, findImportedModule, lookupOrig, tcLookupDataCon, tcLookupTyCon
   , unsafeTcPluginTcM
   )
-import TcSMonad (getDynFlags)
+import GHC.Tc.Solver.Monad (getDynFlags)
 
 
 lookupModule
