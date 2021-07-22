@@ -5,8 +5,9 @@ import Control.Arrow ((***), first)
 import Data.Tuple (swap)
 
 -- GHC API
-import GHC.Driver.Finder (cannotFindModule)
 import GHC (DataCon, TyCon, dataConTyCon)
+#if MIN_VERSION_ghc(9,0,0)
+import GHC.Driver.Finder (cannotFindModule)
 import GHC (Module, ModuleName, mkModuleName)
 import GHC.Plugins (mkDataOcc, mkTcOcc)
 import GHC.Utils.Panic (panicDoc)
@@ -15,7 +16,14 @@ import GHC.Tc.Plugin
   , unsafeTcPluginTcM
   )
 import GHC.Tc.Solver.Monad (getDynFlags)
-
+#else
+import Finder (cannotFindModule)
+import Module (Module, ModuleName, mkModuleName)
+import OccName (mkDataOcc, mkTcOcc)
+import Panic (panicDoc)
+import TcPluginM
+import TcSMonad (getDynFlags)
+#endif
 
 lookupModule
   :: String  -- ^ module name

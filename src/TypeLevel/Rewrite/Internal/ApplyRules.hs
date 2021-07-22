@@ -13,7 +13,11 @@ import Data.Traversable
 import qualified Data.Map as Map
 
 -- GHC API
+#if MIN_VERSION_ghc(9,0,0)
 import GHC.Plugins (TyVar)
+#else
+import Type (TyVar)
+#endif
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))
