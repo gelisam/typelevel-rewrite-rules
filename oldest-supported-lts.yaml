@@ -1,7 +1,7 @@
 # if this build fails and you need to bump the lts, remember
 # to also bump the lower bounds in package.yaml to match the
 # versions provided by that new lts!
-resolver: nightly-2020-12-10
+resolver: lts-18.3
 packages:
 - '.'
 
