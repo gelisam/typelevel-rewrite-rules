@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2673197ba6a9e92128e851017519e221b95a23ca70b1f7b84158feae74eba11b
+-- hash: 201dd297be3e249f9d5773e714652b18086e8f3160a1bdca783242cb52598513
 
 name:           typelevel-rewrite-rules
 version:        1.0
@@ -53,7 +53,8 @@ library
     , term-rewriting >=0.3.0.1
     , transformers >=0.5.6.2
   default-language: Haskell2010
-  default-extensions:  CPP
+  default-extensions:
+      CPP
 
 test-suite should-compile
   type: exitcode-stdio-1.0
