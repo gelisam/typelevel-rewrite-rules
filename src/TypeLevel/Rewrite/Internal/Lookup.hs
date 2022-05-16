@@ -6,8 +6,13 @@ import Data.Tuple (swap)
 
 -- GHC API
 import GHC (DataCon, TyCon, dataConTyCon)
-#if MIN_VERSION_ghc(9,0,0)
+#if MIN_VERSION_ghc(9,2,0)
+import GHC.Iface.Load (cannotFindModule)
+import GHC.Tc.Plugin (getTopEnv)
+#elif MIN_VERSION_ghc(9,0,0)
 import GHC.Driver.Finder (cannotFindModule)
+#endif
+#if MIN_VERSION_ghc(9,0,0)
 import GHC (Module, ModuleName, mkModuleName)
 import GHC.Plugins (mkDataOcc, mkTcOcc)
 import GHC.Utils.Panic (panicDoc)
@@ -35,9 +40,15 @@ lookupModule moduleNameStr = do
     Found _ module_ -> do
       pure module_
     findResult -> do
+#if MIN_VERSION_ghc(9,2,0)
+      hscEnv <- getTopEnv
+      panicDoc ("TypeLevel.Lookup.lookupModule " ++ show moduleNameStr)
+             $ cannotFindModule hscEnv moduleName findResult
+#else
       dynFlags <- unsafeTcPluginTcM getDynFlags
       panicDoc ("TypeLevel.Lookup.lookupModule " ++ show moduleNameStr)
              $ cannotFindModule dynFlags moduleName findResult
+#endif
 
 -- 'TcPluginM.lookupM' unfortunately fails with a very unhelpful error message
 -- when we look up a name which doesn't exist:
