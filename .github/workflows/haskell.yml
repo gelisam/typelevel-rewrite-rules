@@ -1,13 +1,17 @@
-name: Haskell CI
+name: CI
 
 on:
-  push:
-    branches: [ "main" ]
+  # Build every pull request, to check for regressions.
   pull_request:
-    branches: [ "main" ]
+    types: [opened, synchronize]
 
-permissions:
-  contents: read
+  # Build when a PR is merged, to update the README's CI badge.
+  push:
+    branches: [main]
+
+  # Build once a month, to detect missing upper bounds.
+  schedule:
+    - cron: '0 0 1 * *'
 
 jobs:
   stack:
