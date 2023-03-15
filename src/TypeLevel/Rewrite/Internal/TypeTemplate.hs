@@ -2,7 +2,11 @@
 module TypeLevel.Rewrite.Internal.TypeTemplate where
 
 -- GHC API
+#if MIN_VERSION_ghc(9,0,0)
+import GHC.Plugins (TyVar, Type, getTyVar_maybe)
+#else
 import Type (TyVar, Type, getTyVar_maybe)
+#endif
 
 -- term-rewriting API
 import Data.Rewriting.Term (Term(Fun, Var))

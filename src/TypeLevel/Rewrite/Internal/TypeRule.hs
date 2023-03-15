@@ -3,9 +3,15 @@
 module TypeLevel.Rewrite.Internal.TypeRule where
 
 -- GHC API
+#if MIN_VERSION_ghc(9,0,0)
+import GHC.Plugins (getOccString)
+import GHC.Core.Predicate (mkPrimEqPred)
+import GHC.Plugins (TyVar, Type, mkTyVarTy)
+#else
 import Name (getOccString)
 import Predicate (mkPrimEqPred)
 import Type (TyVar, Type, mkTyVarTy)
+#endif
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))

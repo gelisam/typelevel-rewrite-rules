@@ -8,6 +8,17 @@ import Data.Foldable
 import Data.Traversable
 
 -- GHC API
+#if MIN_VERSION_ghc(9,0,0)
+import GHC.Core.Coercion (Role(Representational), mkUnivCo)
+import GHC.Tc.Types.Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
+import GHC.Plugins (PredType, SDoc, eqType, fsep, ppr)
+import GHC.Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
+import GHC.Tc.Types.Evidence (EvExpr, EvTerm, evCast)
+import GHC.Tc.Plugin (newWanted)
+import GHC.Core.TyCo.Rep (UnivCoProvenance(PluginProv))
+import GHC.Plugins (synTyConDefn_maybe)
+import GHC.Tc.Types (TcPluginResult(..), TcPluginM, ErrCtxt, pushErrCtxtSameOrigin, TcPlugin(..))
+#else
 import Coercion (Role(Representational), mkUnivCo)
 import Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
 import GhcPlugins (PredType, SDoc, eqType, fsep, ppr)
@@ -17,6 +28,7 @@ import TcPluginM (newWanted)
 import TcRnTypes
 import TyCoRep (UnivCoProvenance(PluginProv))
 import TyCon (synTyConDefn_maybe)
+#endif
 
 import TypeLevel.Rewrite.Internal.ApplyRules
 import TypeLevel.Rewrite.Internal.DecomposedConstraint
