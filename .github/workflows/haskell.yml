@@ -10,34 +10,150 @@ permissions:
   contents: read
 
 jobs:
-  build:
-
+  stack:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Check that the build passes with the recommended snapshot.
+          - name: stable
+            stack_yaml: "stack.yaml"
+            os: ubuntu-latest
+
+          # Check that the lower bounds are still correct by building with the
+          # lowest-supported version of everything, including our dependencies.
+          - name: oldest
+            stack_yaml: "oldest-supported-lts.yaml"
+            os: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-haskell@v1
-      with:
-        ghc-version: '8.10.3'
-        cabal-version: '3.2'
+    - uses: actions/checkout@v2
 
-    - name: Cache
-      uses: actions/cache@v3
-      env:
-        cache-name: cache-cabal
+    - uses: actions/cache@v2
+      name: Cache Stack Artifacts
       with:
-        path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        path: |
+          ~/.stack
+          .stack-work
+        key: ${{ runner.os }}-stack-${{ hashFiles(matrix.stack_yaml) }}
 
-    - name: Install dependencies
+    - uses: haskell/actions/setup@v1
+      id: setup-haskell-stack
+      name: Setup Stack
+      with:
+        enable-stack: true
+        stack-setup-ghc: true
+        stack-no-global: true
+        ghc-version: ${{ matrix.ghc }}
+
+    - name: Build
+      run: |
+        stack --stack-yaml=${{ matrix.stack_yaml }} build --test --bench --no-run-tests --no-run-benchmarks
+
+    - name: Test
+      run: |
+        stack --stack-yaml=${{ matrix.stack_yaml }} test
+
+  cabal:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Check that our upper bounds are correct by building with the latest
+          # version of everything. We use cabal because it uses the latest
+          # versions of our dependencies allowed by our upper bounds.
+          #
+          # TODO: switch back to "ghc: latest" once we support ghc-9.0
+          - name: newest
+            ghc: "8.10"
+            os: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: haskell/actions/setup@v1
+      id: setup-haskell-cabal
+      name: Setup Cabal
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
+    # This freeze file is regenerated on every build, so we will always test
+    # with the most recent version of our dependencies allowed by our upper
+    # bounds.
+    - name: Freeze
+      run: |
+        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct
+        cabal freeze
+
+    # Only reuse the cached copy of our dependencies if our freeze file matches
+    # the cache's copy.
+    - uses: actions/cache@v2
+      name: Cache Cabal Artifacts
+      with:
+        path: |
+          ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          dist-newstyle
+        key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
+
+    - name: Build
+      run: |
+        cabal build all
+
+    - name: Test
+      run: |
+        cabal test all
+
+  # a separate job just to check the error messages, because that requires
+  # building several failing projects and so the test framework is more complex.
+  error-messages:
+    name: Error Messages
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - ghc: "8.10"
+            os: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # ./test/error-messages/Test.hs is a cabal script, so we need Cabal.
+    - uses: haskell/actions/setup@v1
+      id: setup-haskell-cabal
+      name: Setup Cabal
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        enable-stack: false
+
+    # ./test/error-messages/Test.hs runs some stack projects, so we also need stack.
+    - uses: haskell/actions/setup@v1
+      id: setup-haskell-stack
+      name: Setup Stack
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        enable-stack: true
+
+    - uses: actions/cache@v2
+      id: cache-stack-and-cabal
+      name: Cache Stack and Cabal Artifacts
+      with:
+        # store the whole ~/.cabal, not just ~/.cabal/store, so we don't have to re-run 'cabal update'.
+        path: |
+          ~/.cabal
+          dist-newstyle
+          ~/.stack
+          **/.stack-work
+        key: ${{ runner.os }}-${{ matrix.ghc }}-error-messages-${{ hashFiles('stack.yaml') }}
+
+    # For some reason setup-haskell-cabal sometimes doesn't run 'cabal update'.
+    - name: Initialize Cabal
+      if: steps.cache-stack-and-cabal.outputs.cache-hit != 'true'
       run: |
         cabal update
-        cabal build --only-dependencies --enable-tests --enable-benchmarks
-    - name: Build
-      run: cabal build --enable-tests --enable-benchmarks all
-    - name: Run tests
-      run: cabal test all
+
+    - name: Test Error Messages
+      run: |
+        ./test/error-messages/Test.hs `pwd`
