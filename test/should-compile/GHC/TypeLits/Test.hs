@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators, AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
 {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
                 -fplugin-opt=TypeLevel.Rewrite:GHC.TypeLits.RewriteRules.NatRule
                 -fplugin-opt=TypeLevel.Rewrite:GHC.TypeLits.RewriteRules.SymbolRule #-}
@@ -17,6 +17,7 @@ ex2 :: ( ((s1 `AppendSymbol` "foo") `AppendSymbol` s2)
        ~ (s1 `AppendSymbol` ("foo" `AppendSymbol` s2))
       => r
        )
-    -> proxy s
+    -> proxy s1
+    -> proxy s2
     -> r
-ex2 r _ = r
+ex2 r _ _ = r
