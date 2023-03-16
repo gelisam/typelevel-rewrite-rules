@@ -18,6 +18,10 @@ extra-source-files:
 # for release
 ghc-options: -W -Wall
 
+tested-with:
+  - GHC == 9.0.2
+  - GHC == 8.10.7
+
 dependencies:
   - base >= 4.12 && < 5
   - ghc-prim >= 0.5.3

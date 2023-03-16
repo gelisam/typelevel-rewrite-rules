@@ -65,16 +65,22 @@ jobs:
     strategy:
       matrix:
         include:
-          # Check that our upper bounds are correct by building with the latest
-          # version of everything. We use cabal because it uses the latest
-          # versions of our dependencies allowed by our upper bounds.
+          # The purpose of that section is two-fold. First, because we are
+          # using cabal and not stack, cabal will pick the most recent version
+          # of our dependencies which has been released. This way, if a
+          # dependency releases a breaking change, the next monthly CI will
+          # pick that version and notify us if we are affected by the change.
           #
-          # TODO: switch back to "ghc: latest" once we support ghc-9.0
-          - name: oldest
-            ghc: "8.10"
+          # Second, since this project is a ghc plugin, we rely on details of
+          # the GHC library which change between versions. It is thus quite
+          # easy to accidentally make a change which works for the latest
+          # version of GHC but not with older versions. CI should thus test all
+          # the supported GHC versions.
+          - name: ghc-8.10
+            ghc: "8.10.7"
             os: ubuntu-latest
-          - name: newest
-            ghc: "9.0"
+          - name: ghc-9.0
+            ghc: "9.0.2"
             os: ubuntu-latest
 
     steps:
