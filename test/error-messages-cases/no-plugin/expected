@@ -1,26 +1,2 @@
-configure (lib)
-Configuring no-plugin-0.0.0...
-build (lib)
-Preprocessing library for no-plugin-0.0.0..
-Building library for no-plugin-0.0.0..
-[1 of 2] Compiling NoPlugin.Test
-
-<path>/error-messages-cases/no-plugin/src/NoPlugin/Test.hs:15:16: error:
     • Couldn't match type: as ++ (bs ++ cs)
                      with: (as ++ bs) ++ cs
-      Expected: proxy ((as ++ bs) ++ cs)
-        Actual: proxy (as ++ (bs ++ cs))
-      NB: ‘++’ is a non-injective type family
-    • In the expression: r
-      In an equation for ‘ex2e’: ex2e _ _ _ r = r
-    • Relevant bindings include
-        r :: proxy (as ++ (bs ++ cs)) (bound at src/NoPlugin/Test.hs:15:12)
-        ex2e :: proxy as
-                -> proxy bs
-                -> proxy cs
-                -> proxy (as ++ (bs ++ cs))
-                -> proxy ((as ++ bs) ++ cs)
-          (bound at src/NoPlugin/Test.hs:15:1)
-   |
-15 | ex2e _ _ _ r = r
-   |                ^
