@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, TupleSections, ViewPatterns #-}
+{-# LANGUAGE CPP, LambdaCase, TupleSections, ViewPatterns #-}
 {-# OPTIONS -Wno-name-shadowing #-}
 module TypeLevel.Rewrite.Internal.ApplyRules where
 

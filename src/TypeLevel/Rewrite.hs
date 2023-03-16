@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, OverloadedStrings, RecordWildCards, ViewPatterns #-}
+{-# LANGUAGE CPP, LambdaCase, OverloadedStrings, RecordWildCards, ViewPatterns #-}
 module TypeLevel.Rewrite (plugin) where
 
 import Control.Monad

@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, ViewPatterns #-}
+{-# LANGUAGE CPP, LambdaCase, ViewPatterns #-}
 module TypeLevel.Rewrite.Internal.Lookup where
 
 import Control.Arrow ((***), first)

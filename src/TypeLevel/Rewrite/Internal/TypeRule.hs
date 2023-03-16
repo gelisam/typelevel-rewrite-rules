@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, ViewPatterns #-}
+{-# LANGUAGE CPP, LambdaCase, ViewPatterns #-}
 {-# OPTIONS -Wno-name-shadowing #-}
 module TypeLevel.Rewrite.Internal.TypeRule where
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP, ViewPatterns #-}
 module TypeLevel.Rewrite.Internal.TypeNode where
 
 -- GHC API

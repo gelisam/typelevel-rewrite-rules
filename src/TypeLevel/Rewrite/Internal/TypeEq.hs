@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module TypeLevel.Rewrite.Internal.TypeEq where
 
 import Data.Function

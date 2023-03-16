@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, ViewPatterns #-}
+{-# LANGUAGE CPP, LambdaCase, ViewPatterns #-}
 module TypeLevel.Rewrite.Internal.TypeTemplate where
 
 -- GHC API

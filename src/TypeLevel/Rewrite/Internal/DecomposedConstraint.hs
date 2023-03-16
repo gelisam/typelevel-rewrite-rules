@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable, LambdaCase, RecordWildCards, ViewPatterns #-}
+{-# LANGUAGE CPP, DeriveFunctor, DeriveFoldable, DeriveTraversable, LambdaCase, RecordWildCards, ViewPatterns #-}
 module TypeLevel.Rewrite.Internal.DecomposedConstraint where
 
 import Control.Applicative

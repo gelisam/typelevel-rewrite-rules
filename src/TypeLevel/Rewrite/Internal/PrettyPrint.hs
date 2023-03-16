@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, RecordWildCards #-}
+{-# LANGUAGE CPP, LambdaCase, RecordWildCards #-}
 module TypeLevel.Rewrite.Internal.PrettyPrint where
 
 import Data.List (intercalate)
