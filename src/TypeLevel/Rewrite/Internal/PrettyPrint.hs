@@ -1,12 +1,18 @@
-{-# LANGUAGE LambdaCase, RecordWildCards #-}
+{-# LANGUAGE CPP, LambdaCase, RecordWildCards #-}
 module TypeLevel.Rewrite.Internal.PrettyPrint where
 
 import Data.List (intercalate)
 
 -- GHC API
+#if MIN_VERSION_ghc(9,0,0)
+import GHC.Utils.Outputable (ppr, showSDocUnsafe)
+import GHC.Plugins (TyCon)
+import GHC.Plugins (TyVar, Type)
+#else
 import Outputable (ppr, showSDocUnsafe)
 import TyCon (TyCon)
 import Type (TyVar, Type)
+#endif
 
 -- term-rewriting API
 import Data.Rewriting.Rule (Rule(..))

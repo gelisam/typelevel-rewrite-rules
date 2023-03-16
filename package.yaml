@@ -18,6 +18,10 @@ extra-source-files:
 # for release
 ghc-options: -W -Wall
 
+tested-with:
+  - GHC == 9.0.2
+  - GHC == 8.10.7
+
 dependencies:
   - base >= 4.12 && < 5
   - ghc-prim >= 0.5.3
@@ -25,7 +29,7 @@ dependencies:
 library:
   source-dirs:      src
   dependencies:
-    - ghc >= 8.10.2 && < 9.0
+    - ghc >= 8.10.2 && <9.1
     - containers >= 0.6.2.1
     - term-rewriting >= 0.3.0.1
     - transformers >= 0.5.6.2

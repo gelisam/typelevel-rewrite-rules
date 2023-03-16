@@ -17,6 +17,7 @@ ex2 :: ( ((s1 `AppendSymbol` "foo") `AppendSymbol` s2)
        ~ (s1 `AppendSymbol` ("foo" `AppendSymbol` s2))
       => r
        )
-    -> proxy s
+    -> proxy s1
+    -> proxy s2
     -> r
-ex2 r _ = r
+ex2 r _ _ = r

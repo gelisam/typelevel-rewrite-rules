@@ -1,9 +1,14 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP, ViewPatterns #-}
 module TypeLevel.Rewrite.Internal.TypeNode where
 
 -- GHC API
+#if MIN_VERSION_ghc(9,0,0)
+import GHC (TyCon)
+import GHC.Plugins (Type, isNumLitTy, isStrLitTy, mkTyConApp, splitTyConApp_maybe)
+#else
 import TyCon (TyCon)
 import Type (Type, isNumLitTy, isStrLitTy, mkTyConApp, splitTyConApp_maybe)
+#endif
 
 import TypeLevel.Rewrite.Internal.TypeEq
 
