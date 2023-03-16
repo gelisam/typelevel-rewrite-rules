@@ -1,3 +1,6 @@
+# 1.0.0.1
+* Now supports ghc-9.0 (and remains compatible with ghc-8.10)
+
 # 1.0
 * Now supports ghc-8.10! Unfortunately, ghc-8.6 and ghc-8.8 are no longer
   supported.
