@@ -42,7 +42,7 @@ f5 :: forall a b x y
 f5 = foo @(F a x)
 
 f6 :: forall a b x y
-    . ( b ~ G x y
+    . ( F a b ~ G x y
       , y ~ x
       , x ~ y
       , Foo (F a b)
