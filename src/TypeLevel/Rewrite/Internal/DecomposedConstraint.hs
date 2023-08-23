@@ -5,8 +5,13 @@ import Control.Applicative
 
 -- GHC API
 import GHC (Class, Type)
+#if MIN_VERSION_ghc(9,0,0)
+import GHC.Tc.Types.Constraint (Ct, ctEvPred, ctEvidence)
+import GHC.Core.Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
+#else
 import Constraint (Ct, ctEvPred, ctEvidence)
 import Predicate (EqRel(NomEq), Pred(ClassPred, EqPred), classifyPredType, mkClassPred, mkPrimEqPred)
+#endif
 
 
 data DecomposedConstraint a

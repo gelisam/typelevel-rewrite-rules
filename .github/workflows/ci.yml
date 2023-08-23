@@ -70,8 +70,11 @@ jobs:
           # versions of our dependencies allowed by our upper bounds.
           #
           # TODO: switch back to "ghc: latest" once we support ghc-9.0
-          - name: newest
+          - name: oldest
             ghc: "8.10"
+            os: ubuntu-latest
+          - name: newest
+            ghc: "9.0"
             os: ubuntu-latest
 
     steps:
@@ -118,7 +121,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - ghc: "8.10"
+          - ghc: "9.0"
             os: ubuntu-latest
 
     steps:

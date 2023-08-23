@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE DataKinds, RankNTypes, TypeFamilies, TypeOperators, AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -fplugin TypeLevel.Rewrite
                 -fplugin-opt=TypeLevel.Rewrite:GHC.TypeLits.RewriteRules.NatRule
                 -fplugin-opt=TypeLevel.Rewrite:GHC.TypeLits.RewriteRules.SymbolRule #-}
