@@ -30,13 +30,21 @@ import TcPluginM
 import TcSMonad (getDynFlags)
 #endif
 
+#if MIN_VERSION_ghc(9,6,0)
+import GHC.Types.PkgQual (PkgQual(..))
+#endif
+
 lookupModule
   :: String  -- ^ module name
   -> TcPluginM Module
 lookupModule moduleNameStr = do
   let moduleName :: ModuleName
       moduleName = mkModuleName moduleNameStr
+#if MIN_VERSION_ghc(9,6,0)
+  findImportedModule moduleName NoPkgQual >>= \case
+#else
   findImportedModule moduleName Nothing >>= \case
+#endif
     Found _ module_ -> do
       pure module_
     findResult -> do
