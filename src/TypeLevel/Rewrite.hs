@@ -8,19 +8,7 @@ import Data.Foldable
 import Data.Traversable
 
 -- GHC API
-#if MIN_VERSION_ghc(9,6,0)
-import GHC.Core.Coercion (Role(Representational), mkUnivCo)
-import GHC.Tc.Types.Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
-import GHC.Plugins (PredType, SDoc, fsep, ppr)
-import GHC.Tc.Utils.TcType (eqType)
-import GHC.Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
-import GHC.Tc.Types.Evidence (EvExpr, EvTerm, evCast)
-import GHC.Tc.Plugin (newWanted)
-import GHC.Core.TyCo.Rep (UnivCoProvenance(PluginProv))
-import GHC.Plugins (synTyConDefn_maybe)
-import GHC.Tc.Types (TcPluginSolveResult(..), TcPluginM, ErrCtxt, pushErrCtxtSameOrigin, TcPlugin(..), TcPluginSolver)
-import GHC.Types.Unique.FM ( emptyUFM )
-#elif MIN_VERSION_ghc(9,0,0)
+#if MIN_VERSION_ghc(9,0,0)
 import GHC.Core.Coercion (Role(Representational), mkUnivCo)
 import GHC.Tc.Types.Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
 import GHC.Plugins (PredType, SDoc, eqType, fsep, ppr)
@@ -62,12 +50,9 @@ data ReplaceCt = ReplaceCt
   , replacementConstraints :: [Ct]
   }
 
-
--- See https://gitlab.haskell.org/ghc/ghc/-/commit/9d4ba36f1de7ced62e2c0c6a911411144e9a3b27
--- Change TcPluginResult to TcPluginSolveResult.
 combineReplaceCts
   :: [ReplaceCt]
-  -> TcPluginSolveResult
+  -> TcPluginResult
 combineReplaceCts replaceCts
   = TcPluginOk (fmap solvedConstraint replaceCts)
                (foldMap replacementConstraints replaceCts)
@@ -137,7 +122,6 @@ plugin = defaultPlugin
   { tcPlugin = \args -> Just $ TcPlugin
     { tcPluginInit  = lookupTypeRules args
     , tcPluginSolve = solve
-    , tcPluginRewrite = \_ -> emptyUFM
     , tcPluginStop  = \_ -> pure ()
     }
   , pluginRecompile = purePlugin
@@ -171,51 +155,53 @@ newRuleInducedWanted oldCt rule newPredType = do
 
 solve
   :: [TypeRule]
-  -> TcPluginSolver
-solve rules = \_ givens wanteds' ->
-  case wanteds' of
-    [] -> pure (TcPluginOk [] [])
-    wanteds -> do
-      typeSubst <- execWriterT $ do
-        for_ givens $ \given -> do
-          for_ (asEqualityConstraint given) $ \(lhs, rhs) -> do
-            -- lhs ~ rhs
-            -- where lhs is typically an expression and rhs is typically a variable
-            let var = TypeEq rhs
-            let val = toTypeTerm lhs
-            tell [(var, val)]
-    
-      replaceCts <- execWriterT $ do
-        for_ wanteds $ \wanted -> do
-          -- wanted => ...
-          for_ (asDecomposedConstraint wanted) $ \types -> do
-            -- C a b c => ...
-    
-            -- C a b c
-            let typeTerms = fmap toTypeTerm types
-            let predType = fromDecomposeConstraint types
-    
-            for_ (applyRules typeSubst rules typeTerms) $ \(rule, typeTerms') -> do
-              -- C a' b' c'
-              let types' = fmap fromTypeTerm typeTerms'
-              let predType' = fromDecomposeConstraint types'
-    
-              unless (eqType predType' predType) $ do
-                -- co :: C a' b' c'  ~R  C a b c
-                let co = mkUnivCo
-                           (PluginProv "TypeLevel.Rewrite")
-                           Representational
-                           predType'
-                           predType
-                evWanted' <- lift $ newRuleInducedWanted wanted rule predType'
-                let wanted' = mkNonCanonical evWanted'
-                let futureDict :: EvExpr
-                    futureDict = ctEvExpr evWanted'
-                let replaceCt :: ReplaceCt
-                    replaceCt = ReplaceCt
-                      { evidenceOfCorrectness  = evCast futureDict co
-                      , replacedConstraint     = wanted
-                      , replacementConstraints = [wanted']
-                      }
-                tell [replaceCt]
-      pure $ combineReplaceCts replaceCts
+  -> [Ct]  -- ^ Given constraints
+  -> [Ct]  -- ^ Derived constraints
+  -> [Ct]  -- ^ Wanted constraints
+  -> TcPluginM TcPluginResult
+solve _ _ _ [] = do
+  pure $ TcPluginOk [] []
+solve rules givens _ wanteds = do
+  typeSubst <- execWriterT $ do
+    for_ givens $ \given -> do
+      for_ (asEqualityConstraint given) $ \(lhs, rhs) -> do
+        -- lhs ~ rhs
+        -- where lhs is typically an expression and rhs is typically a variable
+        let var = TypeEq rhs
+        let val = toTypeTerm lhs
+        tell [(var, val)]
+
+  replaceCts <- execWriterT $ do
+    for_ wanteds $ \wanted -> do
+      -- wanted => ...
+      for_ (asDecomposedConstraint wanted) $ \types -> do
+        -- C a b c => ...
+
+        -- C a b c
+        let typeTerms = fmap toTypeTerm types
+        let predType = fromDecomposeConstraint types
+
+        for_ (applyRules typeSubst rules typeTerms) $ \(rule, typeTerms') -> do
+          -- C a' b' c'
+          let types' = fmap fromTypeTerm typeTerms'
+          let predType' = fromDecomposeConstraint types'
+
+          unless (eqType predType' predType) $ do
+            -- co :: C a' b' c'  ~R  C a b c
+            let co = mkUnivCo
+                       (PluginProv "TypeLevel.Rewrite")
+                       Representational
+                       predType'
+                       predType
+            evWanted' <- lift $ newRuleInducedWanted wanted rule predType'
+            let wanted' = mkNonCanonical evWanted'
+            let futureDict :: EvExpr
+                futureDict = ctEvExpr evWanted'
+            let replaceCt :: ReplaceCt
+                replaceCt = ReplaceCt
+                  { evidenceOfCorrectness  = evCast futureDict co
+                  , replacedConstraint     = wanted
+                  , replacementConstraints = [wanted']
+                  }
+            tell [replaceCt]
+  pure $ combineReplaceCts replaceCts
