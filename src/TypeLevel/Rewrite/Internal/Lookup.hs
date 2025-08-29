@@ -4,71 +4,38 @@ module TypeLevel.Rewrite.Internal.Lookup where
 import Control.Arrow ((***), first)
 import Data.Tuple (swap)
 
+import GHC.TcPluginM.Extra (lookupModule, lookupName)
+
 -- GHC API
 import GHC (DataCon, TyCon, dataConTyCon)
 #if MIN_VERSION_ghc(9,0,0)
-import GHC.Driver.Finder (cannotFindModule)
-import GHC (Module, ModuleName, mkModuleName)
-import GHC.Plugins (mkDataOcc, mkTcOcc)
-import GHC.Utils.Panic (panicDoc)
-import GHC.Tc.Plugin
-  ( FindResult(Found), TcPluginM, findImportedModule, lookupOrig, tcLookupDataCon, tcLookupTyCon
-  , unsafeTcPluginTcM
-  )
-import GHC.Tc.Solver.Monad (getDynFlags)
+import GHC.Plugins (mkModuleName, mkTcOcc, mkDataOcc)
+import GHC.Tc.Plugin (TcPluginM, tcLookupTyCon, tcLookupDataCon)
+import GHC.Data.FastString (fsLit)
 #else
-import Finder (cannotFindModule)
-import Module (Module, ModuleName, mkModuleName)
-import OccName (mkDataOcc, mkTcOcc)
-import Panic (panicDoc)
-import TcPluginM
-import TcSMonad (getDynFlags)
+import Module (mkModuleName)
+import OccName (mkTcOcc, mkDataOcc)
+import TcPluginM (TcPluginM, tcLookupTyCon, tcLookupDataCon)
+import FastString (fsLit)
 #endif
-
-lookupModule
-  :: String  -- ^ module name
-  -> TcPluginM Module
-lookupModule moduleNameStr = do
-  let moduleName :: ModuleName
-      moduleName = mkModuleName moduleNameStr
-  findImportedModule moduleName Nothing >>= \case
-    Found _ module_ -> do
-      pure module_
-    findResult -> do
-      dynFlags <- unsafeTcPluginTcM getDynFlags
-      panicDoc ("TypeLevel.Lookup.lookupModule " ++ show moduleNameStr)
-             $ cannotFindModule dynFlags moduleName findResult
-
--- 'TcPluginM.lookupM' unfortunately fails with a very unhelpful error message
--- when we look up a name which doesn't exist:
---
---   Can't find interface-file declaration for type constructor or class ModuleName.TypeName
---   Probable cause: bug in .hi-boot file, or inconsistent .hi file
---   Use -ddump-if-trace to get an idea of which file caused the error
---
--- But the true cause isn't a corrupted file, it's simply that the requested
--- name is not in the given module. I don't know how to fix the error message
--- (I can't use 'try' nor 'tryM' because we're in the wrong monad)
 
 lookupTyCon
   :: String  -- ^ module name
   -> String  -- ^ type constructor/family name
   -> TcPluginM TyCon
 lookupTyCon moduleNameStr tyConNameStr = do
-  module_ <- lookupModule moduleNameStr
-  tyConName <- lookupOrig module_ (mkTcOcc tyConNameStr)
-  tyCon <- tcLookupTyCon tyConName
-  pure tyCon
+  module_ <- lookupModule (mkModuleName moduleNameStr) (fsLit "")
+  tyConName <- lookupName module_ (mkTcOcc tyConNameStr)
+  tcLookupTyCon tyConName
 
 lookupDataCon
   :: String  -- ^ module name
   -> String  -- ^ data constructor name
   -> TcPluginM DataCon
 lookupDataCon moduleNameStr dataConNameStr = do
-  module_ <- lookupModule moduleNameStr
-  dataConName <- lookupOrig module_ (mkDataOcc dataConNameStr)
-  dataCon <- tcLookupDataCon dataConName
-  pure dataCon
+  module_ <- lookupModule (mkModuleName moduleNameStr) (fsLit "")
+  dataConName <- lookupName module_ (mkDataOcc dataConNameStr)
+  tcLookupDataCon dataConName
 
 
 splitFirstDot

@@ -17,15 +17,15 @@ import GHC.Tc.Types.Evidence (EvExpr, EvTerm, evCast)
 import GHC.Tc.Plugin (newWanted)
 import GHC.Core.TyCo.Rep (UnivCoProvenance(PluginProv))
 import GHC.Plugins (synTyConDefn_maybe)
-import GHC.Tc.Types (TcPluginResult(..), TcPluginM, ErrCtxt, pushErrCtxtSameOrigin, TcPlugin(..))
+import GHC.Tc.Types ()
 #else
 import Coercion (Role(Representational), mkUnivCo)
 import Constraint (CtEvidence(ctev_loc), Ct, ctEvExpr, ctLoc, mkNonCanonical)
 import GhcPlugins (PredType, SDoc, eqType, fsep, ppr)
 import Plugins (Plugin(pluginRecompile, tcPlugin), CommandLineOption, defaultPlugin, purePlugin)
 import TcEvidence (EvExpr, EvTerm, evCast)
-import TcPluginM (newWanted)
-import TcRnTypes
+import TcPluginM (newWanted, TcPluginM)
+import TcRnTypes (TcPluginResult(..), ErrCtxt, pushErrCtxtSameOrigin, TcPlugin(..))
 import TyCoRep (UnivCoProvenance(PluginProv))
 import TyCon (synTyConDefn_maybe)
 #endif
